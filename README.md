@@ -23,11 +23,11 @@ Status: In Development
 
 ## Current Foundation
 
-The initial, feature-free foundation is now present: the Java 17 Maven/Spring Boot
-project layout, required dependency declarations, environment-driven profiles,
-SQL Server/JPA/Flyway configuration, common response and exception types,
-OpenAPI metadata, stateless security defaults, and Docker definitions. No V1
-business domain, database table, or authentication flow has been implemented yet.
+The Java 17 Maven/Spring Boot foundation now includes local email/password
+authentication, hashed passwords, JWT access authentication, rotating hashed
+refresh tokens, logout, and current-user resolution. The authentication schema is
+managed by Flyway and its HTTP contract is documented with OpenAPI. No vehicle or
+other V1 business feature has been implemented yet.
 
 Checklist items below remain unchecked where runtime verification still depends on
 downloading Maven artifacts, owner-provided configuration, SQL Server, or Docker.
