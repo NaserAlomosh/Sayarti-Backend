@@ -20,6 +20,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -44,6 +45,9 @@ class AuthenticationIntegrationTest extends AbstractIntegrationTest {
 
     @Autowired
     PasswordEncoder encoder;
+
+    @Autowired
+    JdbcTemplate jdbc;
 
     @MockitoBean
     GoogleTokenVerifier googleTokens;
@@ -85,6 +89,25 @@ class AuthenticationIntegrationTest extends AbstractIntegrationTest {
         assertThat(user.getPasswordHash()).doesNotContain("StrongPass1");
 
         assertThat(encoder.matches("StrongPass1", user.getPasswordHash())).isTrue();
+    }
+
+    @Test
+    void mapsAllPersistedInstantsToUtcAwareSqlServerColumns() {
+        var timestampColumns = jdbc.queryForList("""
+                SELECT TABLE_NAME, COLUMN_NAME, DATA_TYPE, DATETIME_PRECISION
+                FROM INFORMATION_SCHEMA.COLUMNS
+                WHERE (TABLE_NAME = 'users'
+                        AND COLUMN_NAME IN ('created_at', 'updated_at', 'deleted_at'))
+                   OR (TABLE_NAME = 'refresh_tokens'
+                        AND COLUMN_NAME IN ('expires_at', 'created_at', 'revoked_at'))
+                """);
+
+        assertThat(timestampColumns).hasSize(6);
+        assertThat(timestampColumns)
+                .allSatisfy(column -> {
+                    assertThat(column.get("DATA_TYPE")).isEqualTo("datetimeoffset");
+                    assertThat(((Number) column.get("DATETIME_PRECISION")).intValue()).isEqualTo(6);
+                });
     }
 
     @Test
