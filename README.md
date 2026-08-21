@@ -31,9 +31,11 @@ The authentication schema is managed by Flyway and its HTTP contract is document
 
 Docker Desktop and Testcontainers connectivity have been verified locally. Testcontainers successfully detects Docker through the local Unix socket and can pull its supporting containers and the Microsoft SQL Server 2022 image.
 
-The full Maven verification remains incomplete until the SQL Server-backed test suite finishes successfully and Maven reports `BUILD SUCCESS`.
+The full Maven verification has completed successfully. The SQL Server-backed test
+suite started its Testcontainer, applied Flyway migrations, validated the Hibernate
+schema, and Maven reported `BUILD SUCCESS` with all tests passing.
 
-Checklist items below remain unchecked where completion still depends on owner-provided configuration, live external services, unfinished Docker Compose configuration, complete SQL Server integration verification, or unimplemented V1 business features.
+Checklist items below remain unchecked where completion still depends on owner-provided configuration, live external services, unfinished Docker Compose configuration, production verification, or unimplemented V1 business features.
 
 ---
 
@@ -155,7 +157,7 @@ Testcontainers JUnit Jupiter
 Testcontainers Microsoft SQL Server
 ```
 
-- [ ] **Configure Maven**
+- [x] **Configure Maven**
 
 Configure:
 
@@ -558,8 +560,15 @@ Providers: `LOCAL`, `GOOGLE`.
 
 - [x] **Create User Entity**
 - [x] **Get Current User** — `GET /api/v1/users/me`
-- [ ] **Update Current User** — `PATCH /api/v1/users/me`
-- [ ] **Delete Account** — `DELETE /api/v1/users/me`
+- [x] **Update Current User** — `PATCH /api/v1/users/me`
+- [x] **Delete Account** — `DELETE /api/v1/users/me`
+
+Profile updates accept only `firstName` and `lastName`; identity, provider, credential,
+token, and internal security fields cannot be edited or exposed through this API.
+Account deletion uses the existing `deleted_at` soft-deletion strategy, revokes every
+active refresh token for the account, and causes existing access tokens to be rejected
+because authentication resolves only non-deleted users. A deleted account cannot log
+in or refresh a session.
 
 ---
 
@@ -997,6 +1006,18 @@ Database-backed integration tests must use isolated Microsoft SQL Server Testcon
 - [x] Logout
 - [x] Google Authentication
 
+## User Profile Tests
+
+- [x] Get Current User
+- [x] Unauthenticated Profile Access
+- [x] Update First Name
+- [x] Update Last Name
+- [x] Profile Validation
+- [x] Protected Field Update Prevention
+- [x] Delete Account
+- [x] Revoke Deleted Account Sessions
+- [x] Reject Deleted Account Login and Refresh
+
 ## Vehicle Tests
 
 - [ ] Create Vehicle
@@ -1063,7 +1084,7 @@ Database-backed integration tests must use isolated Microsoft SQL Server Testcon
 - [x] **Configure Spring Boot Testcontainers Integration**
 - [x] **Remove H2 Test Database**
 - [x] **Verify Docker Connectivity**
-- [ ] **Verify Complete SQL Server Integration Test Suite**
+- [x] **Verify Complete SQL Server Integration Test Suite**
 
 Database-backed integration tests use Microsoft SQL Server 2022, Testcontainers, Docker Desktop, and Spring Boot service connections.
 
@@ -1097,9 +1118,9 @@ to finish with all SQL Server-backed integration tests passing.
 
 # 41. Final Build Verification
 
-- [ ] **Maven Build Passes**
-- [ ] **All Automated Tests Pass**
-- [ ] **SQL Server Integration Tests Pass**
+- [x] **Maven Build Passes**
+- [x] **All Automated Tests Pass**
+- [x] **SQL Server Integration Tests Pass**
 - [ ] **Application Starts Using Development Profile**
 - [ ] **Application Starts Using Production Profile Configuration**
 - [ ] **Docker Build Passes**
@@ -1129,7 +1150,7 @@ The test infrastructure has been migrated away from H2. Database-backed integrat
 # V1 Main Feature Progress
 
 - [x] Project Setup
-- [ ] Microsoft SQL Server
+- [x] Microsoft SQL Server
 - [ ] Flyway
 - [ ] Common API Infrastructure
 - [x] Global Error Handling
@@ -1140,7 +1161,7 @@ The test infrastructure has been migrated away from H2. Database-backed integrat
 - [x] Refresh Tokens
 - [x] Logout
 - [x] Google Authentication
-- [ ] User Profile
+- [x] User Profile
 - [ ] Vehicle Management
 - [ ] Vehicle Ownership Security
 - [ ] Fuel Tracking
