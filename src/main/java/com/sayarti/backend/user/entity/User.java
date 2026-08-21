@@ -95,4 +95,28 @@ public class User {
     public String getGoogleSubject() {
         return googleSubject;
     }
+
+    public Instant getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public Instant getDeletedAt() {
+        return deletedAt;
+    }
+
+    public void updateProfile(String firstName, String lastName) {
+        if (firstName != null) {
+            this.firstName = firstName.trim();
+        }
+        if (lastName != null) {
+            this.lastName = lastName.trim();
+        }
+        this.updatedAt = Instant.now();
+    }
+
+    public void delete() {
+        Instant now = Instant.now();
+        this.deletedAt = now;
+        this.updatedAt = now;
+    }
 }
