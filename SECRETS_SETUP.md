@@ -52,6 +52,7 @@ DB_PORT=
 DB_NAME=
 DB_USERNAME=
 DB_PASSWORD=
+DB_TRUST_SERVER_CERTIFICATE=true
 
 JWT_ACCESS_SECRET=
 JWT_REFRESH_SECRET=
@@ -101,11 +102,27 @@ For local development, SQL Server can run through Docker using Microsoft's offic
 
 For production, credentials are obtained from the selected hosting/database provider.
 
+## Step-by-Step Local Setup
+
+1. Install Docker Engine with the Docker Compose plugin.
+2. Choose a strong local SQL Server `sa` password that satisfies Microsoft's SQL
+   Server password policy (upper case, lower case, number, and symbol).
+3. Copy `.env.example` to `.env`.
+4. Set `DB_USERNAME=sa` and put the chosen local password in `DB_PASSWORD`.
+5. Keep `DB_HOST=localhost` when the API runs on the host. Docker Compose supplies
+   `DB_HOST=database` to the API container automatically.
+6. Run `docker compose up --build`. The Compose file starts SQL Server, creates the
+   database named by `DB_NAME` when it does not exist, and then starts the API.
+
 ## Where To Put It
 
 Use environment variables or the deployment platform's secrets manager.
 
 Spring Boot configuration must reference these variables from `application.yml` or profile-specific configuration.
+
+`DB_TRUST_SERVER_CERTIFICATE=true` is suitable for the local Docker certificate.
+Set it according to the production provider's TLS instructions; production should
+use a verifiable server certificate rather than weakening certificate validation.
 
 ## Verification
 
