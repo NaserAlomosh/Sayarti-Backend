@@ -1,5 +1,4 @@
 ALTER TABLE users ADD email_verified BIT NOT NULL CONSTRAINT df_users_email_verified DEFAULT 0;
-UPDATE users SET email_verified = 1 WHERE auth_provider = 'GOOGLE';
 
 CREATE TABLE email_verification_otps (
  id UNIQUEIDENTIFIER NOT NULL PRIMARY KEY,
