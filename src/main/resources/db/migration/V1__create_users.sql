@@ -5,9 +5,9 @@ CREATE TABLE users (
  email VARCHAR(320) NOT NULL,
  password_hash VARCHAR(100) NOT NULL,
  auth_provider VARCHAR(20) NOT NULL,
- created_at DATETIME2(7) NOT NULL,
- updated_at DATETIME2(7) NOT NULL,
- deleted_at DATETIME2(7) NULL,
+ created_at DATETIMEOFFSET(6) NOT NULL,
+ updated_at DATETIMEOFFSET(6) NOT NULL,
+ deleted_at DATETIMEOFFSET(6) NULL,
  CONSTRAINT uq_users_email UNIQUE (email),
  CONSTRAINT ck_users_auth_provider CHECK (auth_provider IN ('LOCAL','GOOGLE'))
 );
