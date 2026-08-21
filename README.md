@@ -26,6 +26,7 @@ Status: In Development
 The Java 17 Maven/Spring Boot foundation currently includes:
 
 - Local email/password registration and login.
+- Implemented and locally verified LOCAL email verification, including hashed OTP storage, verification, resend controls, and authentication guards for unverified accounts.
 - BCrypt password hashing.
 - JWT access authentication.
 - Hashed refresh-token storage and rotation.
@@ -49,7 +50,7 @@ Local verification has completed successfully with:
 ./mvnw clean verify
 
 BUILD SUCCESS
-Tests run: 17
+Tests run: 28
 Failures: 0
 Errors: 0
 Skipped: 0
@@ -69,7 +70,7 @@ Docker / Testcontainers
 
 No Vehicle, Fuel, Maintenance, Expense, Reminder, Statistics, Dashboard, or other V1 vehicle-domain feature has been implemented yet.
 
-Email verification for LOCAL accounts is now part of the V1 scope and must be implemented before Vehicle Management begins.
+LOCAL email verification is implemented and locally verified. Real transactional email delivery remains pending provider selection, configuration, and end-to-end verification as documented in `SECRETS_SETUP.md`.
 
 ---
 
@@ -240,7 +241,7 @@ Required tables:
 
 - [x] `users`
 - [x] `refresh_tokens`
-- [ ] `email_verification_otps`
+- [x] `email_verification_otps`
 - [ ] `vehicles`
 - [ ] `fuel_records`
 - [ ] `maintenance_records`
@@ -341,7 +342,7 @@ EXPENSE_NOT_FOUND
 REMINDER_NOT_FOUND
 ```
 
-OTP-related codes remain planned until Email Verification is implemented.
+OTP-related codes are implemented as part of LOCAL Email Verification.
 
 ---
 
@@ -396,7 +397,7 @@ Swagger UI:
 
 Current registration validates first name, last name, unique email, password, password hashing, and DTO validation.
 
-After Email Verification is implemented, LOCAL registration becomes:
+LOCAL registration now follows this flow:
 
 ```text
 Register
@@ -410,7 +411,7 @@ Register
 
 - [x] **Login With Email and Password** — `POST /api/v1/auth/login`
 
-After Email Verification is implemented, unverified LOCAL accounts must return `AUTH_EMAIL_NOT_VERIFIED` and must not receive access or refresh tokens.
+Unverified LOCAL accounts return `AUTH_EMAIL_NOT_VERIFIED` and do not receive access or refresh tokens.
 
 ## Refresh
 
@@ -424,7 +425,7 @@ After Email Verification is implemented, unverified LOCAL accounts must return `
 
 # 14. Email Verification for LOCAL Accounts
 
-Email Verification is required for LOCAL email/password registration before Vehicle Management begins.
+Email Verification for LOCAL email/password registration is implemented and locally verified.
 
 Verified Google users do not require Sayarti OTP verification.
 
@@ -451,7 +452,7 @@ emailVerified = true
 Issue Sayarti access + refresh tokens
 ```
 
-- [ ] **Add Email Verification State to User**
+- [x] **Add Email Verification State to User**
 
 Rules:
 
@@ -460,7 +461,7 @@ LOCAL registration → false
 Verified Google identity → true
 ```
 
-- [ ] **Create Email Verification OTP Entity and Table**
+- [x] **Create Email Verification OTP Entity and Table**
 
 Recommended fields:
 
@@ -484,7 +485,7 @@ Requirements:
 - Useful indexes.
 - Never persist OTP plaintext.
 
-- [ ] **Create OTP Generation Service**
+- [x] **Create OTP Generation Service**
 
 Requirements:
 
@@ -503,13 +504,15 @@ EMAIL_OTP_MAX_ATTEMPTS=5
 EMAIL_OTP_RESEND_COOLDOWN_SECONDS=60
 ```
 
-- [ ] **Create Email Delivery Abstraction**
+- [x] **Create Email Delivery Abstraction**
 
 Create an abstraction such as `EmailService`. Authentication logic must not depend directly on SMTP, Resend, SendGrid, SES, or another provider.
 
 Any required provider credentials must be documented in `SECRETS_SETUP.md`.
 
-- [ ] **Modify LOCAL Registration to Start Email Verification**
+The provider-neutral abstraction is complete. A real transactional email provider is not yet configured or verified and remains pending in `SECRETS_SETUP.md`.
+
+- [x] **Modify LOCAL Registration to Start Email Verification**
 
 After creating a LOCAL user:
 
@@ -519,7 +522,7 @@ After creating a LOCAL user:
 4. Send verification email.
 5. Do not issue normal access/refresh tokens before verification.
 
-- [ ] **Verify Email OTP**
+- [x] **Verify Email OTP**
 
 Endpoint:
 
@@ -551,7 +554,7 @@ Find eligible LOCAL user
 → Return AuthResponse
 ```
 
-- [ ] **Resend Email Verification OTP**
+- [x] **Resend Email Verification OTP**
 
 Endpoint:
 
@@ -567,36 +570,36 @@ Requirements:
 - Single-active-OTP policy.
 - No account-enumeration leakage where avoidable.
 
-- [ ] **Block Unverified LOCAL Login**
-- [ ] **Protect Refresh Flow for Unverified LOCAL Accounts**
-- [ ] **Handle Verified Google Users**
-- [ ] **Prevent OTP Abuse**
-- [ ] **Email Verification Swagger Documentation**
+- [x] **Block Unverified LOCAL Login**
+- [x] **Protect Refresh Flow for Unverified LOCAL Accounts**
+- [x] **Handle Verified Google Users**
+- [x] **Prevent OTP Abuse**
+- [x] **Email Verification Swagger Documentation**
 
-- [ ] **Email Verification Tests**
+- [x] **Email Verification Tests**
 
 Required coverage:
 
-- [ ] LOCAL registration creates unverified user.
-- [ ] OTP is stored hashed.
-- [ ] Valid OTP verifies email.
-- [ ] Verification issues access and refresh tokens.
-- [ ] Invalid OTP rejected.
-- [ ] Expired OTP rejected.
-- [ ] Used OTP rejected.
-- [ ] Invalidated OTP rejected.
-- [ ] Maximum attempts enforced.
-- [ ] Resend creates a new OTP.
-- [ ] Previous OTP invalidated.
-- [ ] Resend cooldown enforced.
-- [ ] Unverified LOCAL login blocked.
-- [ ] Verified LOCAL login succeeds.
-- [ ] Unverified refresh access blocked.
-- [ ] Verified Google user bypasses Sayarti OTP.
-- [ ] Database-backed tests use Microsoft SQL Server Testcontainers.
-- [ ] Pure OTP unit tests do not start Testcontainers unless persistence is required.
+- [x] LOCAL registration creates unverified user.
+- [x] OTP is stored hashed.
+- [x] Valid OTP verifies email.
+- [x] Verification issues access and refresh tokens.
+- [x] Invalid OTP rejected.
+- [x] Expired OTP rejected.
+- [x] Used OTP rejected.
+- [x] Invalidated OTP rejected.
+- [x] Maximum attempts enforced.
+- [x] Resend creates a new OTP.
+- [x] Previous OTP invalidated.
+- [x] Resend cooldown enforced.
+- [x] Unverified LOCAL login blocked.
+- [x] Verified LOCAL login succeeds.
+- [x] Unverified refresh access blocked.
+- [x] Verified Google user bypasses Sayarti OTP.
+- [x] Database-backed tests use Microsoft SQL Server Testcontainers.
+- [x] Pure OTP unit tests do not start Testcontainers unless persistence is required.
 
-Email Verification is complete only when `./mvnw clean verify` returns `BUILD SUCCESS` and any real email-provider integration included in the task has been genuinely verified.
+The LOCAL Email Verification implementation is verified by `./mvnw clean verify`. This does not claim real email delivery: provider-specific configuration and end-to-end delivery verification remain pending in `SECRETS_SETUP.md`.
 
 ---
 
@@ -914,20 +917,20 @@ api.version=1.44
 
 ## Email Verification Tests
 
-- [ ] Registration Creates Unverified LOCAL User
-- [ ] OTP Stored Hashed
-- [ ] Valid OTP
-- [ ] Invalid OTP
-- [ ] Expired OTP
-- [ ] Used OTP
-- [ ] Maximum Attempts
-- [ ] Resend OTP
-- [ ] Previous OTP Invalidated
-- [ ] Resend Cooldown
-- [ ] Unverified LOCAL Login Blocked
-- [ ] Verified LOCAL Login
-- [ ] Unverified Refresh Access Blocked
-- [ ] Verified Google Account Bypasses OTP
+- [x] Registration Creates Unverified LOCAL User
+- [x] OTP Stored Hashed
+- [x] Valid OTP
+- [x] Invalid OTP
+- [x] Expired OTP
+- [x] Used OTP
+- [x] Maximum Attempts
+- [x] Resend OTP
+- [x] Previous OTP Invalidated
+- [x] Resend Cooldown
+- [x] Unverified LOCAL Login Blocked
+- [x] Verified LOCAL Login
+- [x] Unverified Refresh Access Blocked
+- [x] Verified Google Account Bypasses OTP
 
 ## Vehicle Tests
 
@@ -1003,7 +1006,7 @@ Current verified baseline:
 
 ```text
 BUILD SUCCESS
-Tests run: 17
+Tests run: 28
 Failures: 0
 Errors: 0
 Skipped: 0
@@ -1043,7 +1046,7 @@ before its own checklist items are marked complete.
 - [x] Spring Security
 - [x] JWT Authentication
 - [x] Registration Base Flow
-- [ ] Email Verification
+- [x] Email Verification
 - [x] Email / Password Login Base Flow
 - [x] Refresh Tokens
 - [x] Logout
