@@ -1206,3 +1206,39 @@ Remove unused imports.
 Do not compress methods merely to reduce line count.
 Avoid unrelated formatting-only diffs.
 ```
+
+## Environment File Protection Rule
+
+Codex must NEVER delete, blank, replace, reset, sanitize, or overwrite existing values in any local `.env` file.
+
+The local `.env` file may contain real development credentials and project-owner configuration.
+
+Rules:
+
+1. Treat `.env` as owner-managed local configuration.
+2. Preserve every existing key and value exactly as found.
+3. Never replace an existing value with an empty value.
+4. Never replace an existing value with an example or placeholder.
+5. Never regenerate the entire `.env` file.
+6. Never copy `.env.example` over `.env`.
+7. Never remove unknown or unused keys from `.env`.
+8. Never reorder or reformat `.env` unless explicitly requested by the project owner.
+9. If a new environment variable is required:
+    - append only the missing key to `.env` if editing `.env` is explicitly required,
+    - do not modify any existing lines or values,
+    - add the key to `.env.example` with a safe placeholder/default,
+    - document the key in `SECRETS_SETUP.md` when owner input is required.
+10. If a required key already exists in `.env`, keep its current value unchanged.
+11. Never expose or copy real `.env` values into:
+- README.md
+- SECRETS_SETUP.md
+- `.env.example`
+- source code
+- tests
+- logs
+- commits
+12. `.env.example` may be updated freely with safe placeholders, but `.env` must be treated as protected data.
+
+If there is any uncertainty about whether an existing `.env` value should be changed, leave it unchanged.
+
+Violation of this rule is considered a destructive configuration change.
