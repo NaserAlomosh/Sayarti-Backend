@@ -70,6 +70,12 @@
             <artifactId>spring-boot-starter-validation</artifactId>
         </dependency>
 
+        <!-- Provider-neutral SMTP email delivery -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-mail</artifactId>
+        </dependency>
+
         <!-- Microsoft SQL Server -->
         <dependency>
             <groupId>com.microsoft.sqlserver</groupId>
