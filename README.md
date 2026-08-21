@@ -21,6 +21,17 @@ Version: V1
 Status: In Development
 ```
 
+## Current Foundation
+
+The initial, feature-free foundation is now present: the Java 17 Maven/Spring Boot
+project layout, required dependency declarations, environment-driven profiles,
+SQL Server/JPA/Flyway configuration, common response and exception types,
+OpenAPI metadata, stateless security defaults, and Docker definitions. No V1
+business domain, database table, or authentication flow has been implemented yet.
+
+Checklist items below remain unchecked where runtime verification still depends on
+downloading Maven artifacts, owner-provided configuration, SQL Server, or Docker.
+
 ---
 
 # Technology Stack
@@ -242,6 +253,10 @@ FIREBASE_PRIVATE_KEY=
 ```
 
 Never add real credentials.
+
+Copy `.env.example` to an ignored `.env` for Docker Compose, or export the same
+variables in the shell when running the application directly. Spring Boot does not
+read `.env` files by itself.
 
 ---
 
@@ -1497,6 +1512,12 @@ Verification command:
 ```
 
 No production secrets may be committed.
+
+The repository currently contains unit/context tests for response serialization,
+validation and explicit exception mapping, protected/public security routes,
+security headers, and password encoding. SQL Server Testcontainers are available
+as a dependency for future database-specific integration tests; no database schema
+exists yet by design.
 
 ---
 
