@@ -21,3 +21,5 @@ sayarti:
     refresh-secret: unused-test-refresh-secret-that-is-at-least-thirty-two-bytes
     access-expiration: 900000
     refresh-expiration: 2592000000
+  google:
+    client-id: test-google-client-id.apps.googleusercontent.com
