@@ -312,9 +312,9 @@ Google Auth Platform
 → Create OAuth Client
 ```
 
-For a mobile flow where the backend verifies an ID token, a Web Application client ID is commonly used as the backend audience/server client ID.
-
-Codex must confirm the actual implemented flow before finalizing the configuration.
+For Sayarti's implemented mobile ID-token flow, create a Web Application OAuth
+client. Its client ID is the backend audience/server client ID that Android and iOS
+request when obtaining the Google ID token.
 
 ## What To Copy
 
