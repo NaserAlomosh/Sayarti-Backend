@@ -10,15 +10,19 @@ import org.springframework.stereotype.Service;
 public class GoogleIdTokenService implements GoogleTokenVerifier {
     private final GoogleIdTokenVerifier verifier;
 
-    public GoogleIdTokenService(GoogleIdTokenVerifier verifier) { this.verifier = verifier; }
+    public GoogleIdTokenService(GoogleIdTokenVerifier verifier) {
+        this.verifier = verifier;
+    }
 
     @Override
     public GoogleIdentity verify(String rawToken) {
         try {
             GoogleIdToken token = verifier.verify(rawToken);
-            if (token == null) throw invalid();
+            if (token == null)
+                throw invalid();
             GoogleIdToken.Payload payload = token.getPayload();
-            if (!Boolean.TRUE.equals(payload.getEmailVerified()) || blank(payload.getSubject()) || blank(payload.getEmail())) {
+            if (!Boolean.TRUE.equals(payload.getEmailVerified()) || blank(payload.getSubject())
+                    || blank(payload.getEmail())) {
                 throw invalid();
             }
             return new GoogleIdentity(payload.getSubject(), payload.getEmail(),
@@ -32,7 +36,11 @@ public class GoogleIdTokenService implements GoogleTokenVerifier {
         Object value = payload.get(name);
         return value instanceof String text ? text : "";
     }
-    private boolean blank(String value) { return value == null || value.isBlank(); }
+
+    private boolean blank(String value) {
+        return value == null || value.isBlank();
+    }
+
     private GoogleAuthenticationException invalid() {
         return new GoogleAuthenticationException("Google ID token is invalid or expired");
     }

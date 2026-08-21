@@ -12,7 +12,8 @@ class ApiResponseTest {
 
     @Test
     void serializesStandardSuccessResponse() throws Exception {
-        JsonNode json = objectMapper.readTree(objectMapper.writeValueAsBytes(ApiResponse.success(Map.of("id", 1))));
+        JsonNode json = objectMapper.readTree(
+                objectMapper.writeValueAsBytes(ApiResponse.success(Map.of("id", 1))));
 
         assertThat(json.path("success").asBoolean()).isTrue();
         assertThat(json.path("data").path("id").asInt()).isEqualTo(1);

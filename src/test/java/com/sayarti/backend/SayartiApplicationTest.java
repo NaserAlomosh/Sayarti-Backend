@@ -11,7 +11,6 @@ import org.springframework.test.context.ActiveProfiles;
 @SpringBootTest
 @ActiveProfiles("test")
 class SayartiApplicationTest extends AbstractIntegrationTest {
-
     @Autowired
     private PasswordEncoder passwordEncoder;
 

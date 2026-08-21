@@ -7,7 +7,6 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 
 @Testcontainers
 public abstract class AbstractIntegrationTest {
-
     @Container
     @ServiceConnection
     static final MSSQLServerContainer<?> SQL_SERVER =

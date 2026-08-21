@@ -21,30 +21,36 @@ public class GlobalExceptionHandler {
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    ResponseEntity<ErrorResponse> handleMethodArgumentNotValid(MethodArgumentNotValidException exception) {
+    ResponseEntity<ErrorResponse> handleMethodArgumentNotValid(
+            MethodArgumentNotValidException exception) {
         Map<String, String> details = new LinkedHashMap<>();
         for (FieldError error : exception.getBindingResult().getFieldErrors()) {
             details.putIfAbsent(error.getField(), error.getDefaultMessage());
         }
-        return response(HttpStatus.BAD_REQUEST, ErrorCode.VALIDATION_ERROR, "Request validation failed", details);
+        return response(HttpStatus.BAD_REQUEST, ErrorCode.VALIDATION_ERROR,
+                "Request validation failed", details);
     }
 
     @ExceptionHandler(ConstraintViolationException.class)
-    ResponseEntity<ErrorResponse> handleConstraintViolation(ConstraintViolationException exception) {
+    ResponseEntity<ErrorResponse> handleConstraintViolation(
+            ConstraintViolationException exception) {
         Map<String, String> details = new LinkedHashMap<>();
-        exception.getConstraintViolations().forEach(violation ->
-                details.put(violation.getPropertyPath().toString(), violation.getMessage()));
-        return response(HttpStatus.BAD_REQUEST, ErrorCode.VALIDATION_ERROR, "Request validation failed", details);
+        exception.getConstraintViolations().forEach(violation
+                -> details.put(violation.getPropertyPath().toString(), violation.getMessage()));
+        return response(HttpStatus.BAD_REQUEST, ErrorCode.VALIDATION_ERROR,
+                "Request validation failed", details);
     }
 
     @ExceptionHandler(ApiException.class)
     ResponseEntity<ErrorResponse> handleApiException(ApiException exception) {
-        return response(exception.getStatus(), exception.getErrorCode(), exception.getMessage(), null);
+        return response(
+                exception.getStatus(), exception.getErrorCode(), exception.getMessage(), null);
     }
 
     @ExceptionHandler(AuthenticationException.class)
     ResponseEntity<ErrorResponse> handleAuthentication(AuthenticationException exception) {
-        return response(HttpStatus.UNAUTHORIZED, ErrorCode.UNAUTHORIZED, "Authentication is required", null);
+        return response(HttpStatus.UNAUTHORIZED, ErrorCode.UNAUTHORIZED,
+                "Authentication is required", null);
     }
 
     @ExceptionHandler(AccessDeniedException.class)

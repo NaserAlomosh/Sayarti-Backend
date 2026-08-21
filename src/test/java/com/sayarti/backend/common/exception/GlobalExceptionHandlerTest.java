@@ -24,16 +24,16 @@ class GlobalExceptionHandlerTest {
         LocalValidatorFactoryBean validator = new LocalValidatorFactoryBean();
         validator.afterPropertiesSet();
         mockMvc = MockMvcBuilders.standaloneSetup(new TestController())
-                .setControllerAdvice(new GlobalExceptionHandler())
-                .setValidator(validator)
-                .build();
+                          .setControllerAdvice(new GlobalExceptionHandler())
+                          .setValidator(validator)
+                          .build();
     }
 
     @Test
     void returnsFieldDetailsForInvalidRequest() throws Exception {
         mockMvc.perform(post("/test/validate")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"name\":\"\"}"))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("{\"name\":\"\"}"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.success").value(false))
                 .andExpect(jsonPath("$.error.code").value("VALIDATION_ERROR"))

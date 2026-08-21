@@ -5,7 +5,6 @@ import java.util.Map;
 
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
 public record ApiError(String code, String message, Map<String, String> details) {
-
     public ApiError(String code, String message) {
         this(code, message, null);
     }
