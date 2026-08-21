@@ -16,7 +16,8 @@ public class GoogleOAuthConfiguration {
         if (properties.clientId() == null || properties.clientId().isBlank()) {
             throw new IllegalStateException("GOOGLE_CLIENT_ID must be configured");
         }
-        return new GoogleIdTokenVerifier.Builder(new NetHttpTransport(), GsonFactory.getDefaultInstance())
+        return new GoogleIdTokenVerifier
+                .Builder(new NetHttpTransport(), GsonFactory.getDefaultInstance())
                 .setAudience(List.of(properties.clientId()))
                 .build();
     }

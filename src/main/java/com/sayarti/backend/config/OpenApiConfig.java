@@ -15,10 +15,9 @@ public class OpenApiConfig {
     @Bean
     OpenAPI sayartiOpenApi() {
         return new OpenAPI()
-                .info(new Info()
-                        .title("Sayarti API")
-                        .description("REST API for Sayarti mobile clients")
-                        .version("v1"))
+                .info(new Info().title("Sayarti API")
+                                .description("REST API for Sayarti mobile clients")
+                                .version("v1"))
                 .components(new Components().addSecuritySchemes(BEARER_SCHEME,
                         new SecurityScheme()
                                 .type(SecurityScheme.Type.HTTP)

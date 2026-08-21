@@ -5,8 +5,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.sayarti.backend.AbstractIntegrationTest;
 import com.sayarti.backend.SayartiApplication;
+import com.sayarti.backend.auth.repository.RefreshTokenRepository;
+import com.sayarti.backend.user.repository.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -14,18 +15,32 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-@SpringBootTest(classes = SayartiApplication.class)
+@SpringBootTest(
+        classes = SayartiApplication.class,
+        properties =
+                "spring.autoconfigure.exclude="
+                        + "org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration,"
+                        + "org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration,"
+                        + "org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration,"
+                        + "org.springframework.boot.autoconfigure.data.jpa."
+                        + "JpaRepositoriesAutoConfiguration")
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @Import(SecurityConfigTest.TestEndpoint.class)
-class SecurityConfigTest extends AbstractIntegrationTest {
-
+class SecurityConfigTest {
     @Autowired
     private MockMvc mockMvc;
+
+    @MockitoBean
+    private UserRepository userRepository;
+
+    @MockitoBean
+    private RefreshTokenRepository refreshTokenRepository;
 
     @Test
     void protectsNonPublicRoutesWithStandardError() throws Exception {
@@ -39,8 +54,7 @@ class SecurityConfigTest extends AbstractIntegrationTest {
 
     @Test
     void permitsDocumentedAuthenticationRoute() throws Exception {
-        mockMvc.perform(get("/api/v1/auth/ping"))
-                .andExpect(status().isOk());
+        mockMvc.perform(get("/api/v1/auth/ping")).andExpect(status().isOk());
     }
 
     @TestConfiguration

@@ -1,2 +1,3 @@
 package com.sayarti.backend.auth.dto;
-public record LogoutResponse(boolean revoked) {}
+public record LogoutResponse(boolean revoked) {
+}
