@@ -10,7 +10,7 @@ import org.springframework.test.context.ActiveProfiles;
 
 @SpringBootTest
 @ActiveProfiles("test")
-class SayartiApplicationTest {
+class SayartiApplicationTest extends AbstractIntegrationTest {
 
     @Autowired
     private PasswordEncoder passwordEncoder;

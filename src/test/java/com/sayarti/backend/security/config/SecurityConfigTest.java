@@ -5,6 +5,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.sayarti.backend.AbstractIntegrationTest;
 import com.sayarti.backend.SayartiApplication;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,7 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @Import(SecurityConfigTest.TestEndpoint.class)
-class SecurityConfigTest {
+class SecurityConfigTest extends AbstractIntegrationTest {
 
     @Autowired
     private MockMvc mockMvc;

@@ -6,9 +6,11 @@ import static org.mockito.Mockito.*;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
 import java.io.IOException;
+
+import com.sayarti.backend.AbstractIntegrationTest;
 import org.junit.jupiter.api.Test;
 
-class GoogleIdTokenServiceTest {
+class GoogleIdTokenServiceTest extends AbstractIntegrationTest {
     private final GoogleIdTokenVerifier verifier = mock(GoogleIdTokenVerifier.class);
     private final GoogleIdTokenService service = new GoogleIdTokenService(verifier);
 
