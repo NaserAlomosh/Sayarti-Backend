@@ -186,7 +186,7 @@ BUILD SUCCESS
 - [ ] **Create / Finalize `.env.example`**
 
 Current expected baseline:
-
+if any value of any key exist keep it not delete it
 ```env
 DB_HOST=localhost
 DB_PORT=1433
@@ -249,7 +249,7 @@ Required tables:
 - [ ] `devices`
 
 All schema changes must be performed through Flyway migrations.
-
+Test Any migration you created 
 ---
 
 # 5. Project Architecture

@@ -48,8 +48,13 @@ class EmailVerificationIntegrationTest extends AbstractIntegrationTest {
         register("verify@example.com");
         String plaintext = sentOtp();
         var otp = otps.findAll().get(0);
+
         assertThat(otp.getOtpHash()).doesNotContain(plaintext);
-        assertThat(otp.getUser().isEmailVerified()).isFalse();
+
+        var user = users.findByEmailIgnoreCaseAndDeletedAtIsNull("verify@example.com")
+                .orElseThrow();
+
+        assertThat(user.isEmailVerified()).isFalse();
 
         mvc.perform(post("/api/v1/auth/verify-email").contentType(MediaType.APPLICATION_JSON)
                         .content("{\"email\":\"verify@example.com\",\"otp\":\"%s\"}"
