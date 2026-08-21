@@ -9,6 +9,7 @@ public record UserResponse(
         String firstName,
         String lastName,
         String email,
+        boolean emailVerified,
         String authProvider,
         Instant createdAt,
         Instant updatedAt) {
@@ -18,6 +19,7 @@ public record UserResponse(
                 user.getFirstName(),
                 user.getLastName(),
                 user.getEmail(),
+                user.isEmailVerified(),
                 user.getAuthProvider().name(),
                 user.getCreatedAt(),
                 user.getUpdatedAt());

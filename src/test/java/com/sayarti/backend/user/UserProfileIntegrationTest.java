@@ -194,7 +194,7 @@ class UserProfileIntegrationTest extends AbstractIntegrationTest {
     }
 
     private Session register() throws Exception {
-        MvcResult result = mvc.perform(post("/api/v1/auth/register")
+        mvc.perform(post("/api/v1/auth/register")
                                                .contentType(MediaType.APPLICATION_JSON)
                                                .content("""
                                                        {
@@ -206,7 +206,10 @@ class UserProfileIntegrationTest extends AbstractIntegrationTest {
                                                        """.formatted(EMAIL, PASSWORD)))
                                    .andExpect(status().isCreated())
                                    .andReturn();
-        return session(result);
+        var user = users.findByEmailIgnoreCaseAndDeletedAtIsNull(EMAIL).orElseThrow();
+        user.verifyEmail();
+        users.saveAndFlush(user);
+        return login();
     }
 
     private Session login() throws Exception {
