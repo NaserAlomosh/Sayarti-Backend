@@ -24,6 +24,22 @@ spring:
   mvc:
     problemdetails:
       enabled: false
+  mail:
+    host: ${SMTP_HOST:localhost}
+    port: ${SMTP_PORT:25}
+    username: ${SMTP_USERNAME:}
+    password: ${SMTP_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          starttls:
+            enable: ${SMTP_TLS:false}
+            required: ${SMTP_STARTTLS_REQUIRED:false}
+          ssl:
+            enable: ${SMTP_SSL:false}
+          connectiontimeout: ${SMTP_CONNECTION_TIMEOUT:10000}
+          timeout: ${SMTP_TIMEOUT:60000}
+          writetimeout: ${SMTP_WRITE_TIMEOUT:60000}
 
 server:
   error:
@@ -38,6 +54,8 @@ springdoc:
 
 sayarti:
   api-base-path: /api/v1
+  email:
+    from: ${SMTP_FROM:no-reply@example.com}
   cors:
     allowed-origins: ${ALLOWED_ORIGINS:http://localhost:3000,http://localhost:8080}
   jwt:

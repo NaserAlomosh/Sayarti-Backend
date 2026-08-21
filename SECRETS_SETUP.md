@@ -711,49 +711,116 @@ Codex should implement everything safely possible without missing credentials an
 
 ---
 
-# 18. Transactional Email Provider
+# 18. SMTP Transactional Email Delivery
 
 ## Status
 
 - [ ] Required from project owner
+- [x] Spring Mail SMTP adapter implemented and automated-test verified
 - [ ] Real email delivery configured and verified
 
 ## Required For
 
-Delivering the six-digit LOCAL-account email verification OTP. The backend contains
-a provider-neutral `EmailService` boundary and the complete verification flow, but no
-real provider is selected or configured. The current fallback deliberately does not
-send or log OTP plaintext and must not be treated as working delivery.
+Delivering the six-digit LOCAL-account verification OTP. Business and authentication
+logic use the provider-neutral `EmailService`; only the SMTP adapter uses Spring Mail.
+A different SMTP provider can therefore be used in production without changing
+application business logic.
 
-## Values To Provide
+## Environment Variables
 
-Choose a transactional provider (for example SMTP, Resend, SendGrid, or AWS SES) and
-provide its API key or SMTP credentials plus a verified sender address/domain. Exact
-environment variable names should be added when the provider is selected; provider
-credentials must not be committed or placed in the Flutter application.
+```env
+SMTP_HOST=
+SMTP_PORT=587
+SMTP_USERNAME=
+SMTP_PASSWORD=
+SMTP_FROM=
+SMTP_TLS=true
+SMTP_STARTTLS_REQUIRED=true
+SMTP_SSL=false
+SMTP_CONNECTION_TIMEOUT=10000
+SMTP_TIMEOUT=60000
+SMTP_WRITE_TIMEOUT=60000
+```
 
-## Where To Get Them
+- `SMTP_HOST`: SMTP server hostname supplied by the mail provider.
+- `SMTP_PORT`: SMTP submission port. Port 587 is normally used with STARTTLS.
+- `SMTP_USERNAME`: SMTP login name, often the sending email address.
+- `SMTP_PASSWORD`: SMTP credential or provider-issued app password; keep it secret.
+- `SMTP_FROM`: sender address placed in the message's From header. It must be allowed
+  or verified by the provider.
+- `SMTP_TLS`: enables STARTTLS, upgrading the SMTP connection to TLS.
+- `SMTP_STARTTLS_REQUIRED`: fails delivery unless the server supports STARTTLS.
+- `SMTP_SSL`: enables implicit SMTP-over-SSL (commonly port 465). Do not normally
+  enable this together with the port-587 STARTTLS configuration.
+- `SMTP_CONNECTION_TIMEOUT`: connection timeout in milliseconds (default `10000`).
+- `SMTP_TIMEOUT`: socket read timeout in milliseconds (default `60000`).
+- `SMTP_WRITE_TIMEOUT`: socket write timeout in milliseconds (default `60000`).
 
-1. Create or select the provider account.
-2. Verify a sending domain or sender address using the provider's DNS/email steps.
-3. Create a restricted sending API key or SMTP credential in the provider console.
-4. Copy the credential once into the deployment platform's secret manager or local
-   uncommitted `.env` file.
+## Gmail SMTP Example For Development
 
-## Where It Goes
+```env
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USERNAME=<your-google-account-email>
+SMTP_PASSWORD=<your-16-character-google-app-password>
+SMTP_FROM=<your-google-account-email-or-approved-sender>
+SMTP_TLS=true
+SMTP_STARTTLS_REQUIRED=true
+SMTP_SSL=false
+SMTP_CONNECTION_TIMEOUT=10000
+SMTP_TIMEOUT=60000
+SMTP_WRITE_TIMEOUT=60000
+```
 
-Add a provider-specific implementation of
-`src/main/java/com/sayarti/backend/email/EmailService.java`, load credentials through
-Spring configuration backed by environment variables, and activate that implementation
-instead of `UnconfiguredEmailService`. Do not pass the credential into authentication
-services; they depend only on `EmailService`.
+Do not use the normal Google account password as `SMTP_PASSWORD`. Use a Google App
+Password:
 
-## Verification
+1. Sign in to the Google account that will send development messages.
+2. Open the Google Account security settings and enable **2-Step Verification**.
+3. Open **App passwords** (search the Google Account settings if necessary).
+4. Create a new App Password for Sayarti/mail.
+5. Copy the generated App Password once and store it as `SMTP_PASSWORD` in the local
+   uncommitted `.env` or deployment secret manager.
+6. Set `SMTP_USERNAME` and `SMTP_FROM` to the appropriate account/sender address.
 
-1. Register a LOCAL account using an inbox controlled for testing.
-2. Confirm exactly one message arrives and contains the six-digit code.
-3. Submit it to `POST /api/v1/auth/verify-email` within five minutes.
-4. Confirm the endpoint returns access and refresh tokens and the same code cannot be
-   reused.
-5. Test resend after the cooldown and confirm only the newest code works.
-6. Only then change the real-delivery status above to provided and verified.
+Google may not show App Passwords for some managed, child, or Advanced Protection
+accounts. In that case, use an organization-approved SMTP provider instead.
+
+## Where To Put It
+
+Copy `.env.example` to the ignored `.env` file for local development, or configure
+these values in the deployment platform's environment/secrets manager. Never commit
+credentials and never put SMTP credentials in Flutter.
+
+Spring maps the connection settings under `spring.mail` and the sender separately as
+`sayarti.email.from`. Defaults are safe for application startup, but delivery will
+fail until a reachable SMTP server and valid credentials are configured.
+
+## Failure And Transaction Behavior
+
+SMTP/provider failures are converted to the safe application error
+`EMAIL_DELIVERY_FAILED`; raw provider messages and credentials are not returned.
+Operational logging includes only the recipient domain and exception category and
+never includes the OTP or SMTP password.
+
+For registration and resend, the unverified user and newly hashed OTP state are kept
+when delivery fails. This avoids losing the registration and leaves a consistent
+single active OTP record. The client receives the safe delivery failure and can use
+`POST /api/v1/auth/resend-verification` later after the configured cooldown. Plaintext
+OTP is passed only to the adapter and is never persisted or logged.
+
+## Real End-to-End Verification
+
+1. Configure all SMTP variables in the local uncommitted `.env` or exported process
+   environment.
+2. Ensure the development database is running and start the backend with those
+   environment variables loaded.
+3. Register a new LOCAL account using an inbox you control.
+4. Confirm one Sayarti verification message arrives and contains a six-digit OTP.
+5. Submit it to `POST /api/v1/auth/verify-email` before expiration and confirm access
+   and refresh tokens are returned.
+6. Confirm the same code cannot be reused.
+7. After the cooldown, test `POST /api/v1/auth/resend-verification`; confirm only the
+   newest delivered code works.
+8. Only after receipt and verification succeeds should real SMTP delivery be marked
+   verified.

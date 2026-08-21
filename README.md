@@ -27,6 +27,7 @@ The Java 17 Maven/Spring Boot foundation currently includes:
 
 - Local email/password registration and login.
 - Implemented and locally verified LOCAL email verification, including hashed OTP storage, verification, resend controls, and authentication guards for unverified accounts.
+- Spring Mail SMTP adapter implemented with mock-based automated coverage; real SMTP delivery awaits owner credentials and inbox verification.
 - BCrypt password hashing.
 - JWT access authentication.
 - Hashed refresh-token storage and rotation.
@@ -70,7 +71,10 @@ Docker / Testcontainers
 
 No Vehicle, Fuel, Maintenance, Expense, Reminder, Statistics, Dashboard, or other V1 vehicle-domain feature has been implemented yet.
 
-LOCAL email verification is implemented and locally verified. Real transactional email delivery remains pending provider selection, configuration, and end-to-end verification as documented in `SECRETS_SETUP.md`.
+LOCAL email verification is implemented and locally verified. The provider-neutral SMTP
+adapter is implemented and automated-test covered. Real SMTP delivery remains
+unverified until owner credentials are configured and an OTP is received, as documented
+in `SECRETS_SETUP.md`.
 
 ---
 
@@ -510,7 +514,9 @@ Create an abstraction such as `EmailService`. Authentication logic must not depe
 
 Any required provider credentials must be documented in `SECRETS_SETUP.md`.
 
-The provider-neutral abstraction is complete. A real transactional email provider is not yet configured or verified and remains pending in `SECRETS_SETUP.md`.
+The provider-neutral abstraction and Spring Mail SMTP implementation are complete.
+Authentication remains independent of SMTP details. Real SMTP delivery is not yet
+verified and remains an owner action in `SECRETS_SETUP.md`.
 
 - [x] **Modify LOCAL Registration to Start Email Verification**
 
@@ -599,7 +605,10 @@ Required coverage:
 - [x] Database-backed tests use Microsoft SQL Server Testcontainers.
 - [x] Pure OTP unit tests do not start Testcontainers unless persistence is required.
 
-The LOCAL Email Verification implementation is verified by `./mvnw clean verify`. This does not claim real email delivery: provider-specific configuration and end-to-end delivery verification remain pending in `SECRETS_SETUP.md`.
+The LOCAL Email Verification backend flow is verified. The SMTP adapter has mock-based
+automated tests and does not make network calls during the test suite. This does not
+claim real email delivery: credentials and inbox-based end-to-end verification remain
+pending in `SECRETS_SETUP.md`.
 
 ---
 

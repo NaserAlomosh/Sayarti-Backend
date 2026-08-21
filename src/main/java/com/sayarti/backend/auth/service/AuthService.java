@@ -11,6 +11,7 @@ import com.sayarti.backend.auth.dto.RegisterRequest;
 import com.sayarti.backend.auth.dto.VerifyEmailRequest;
 import com.sayarti.backend.common.exception.ApiException;
 import com.sayarti.backend.common.exception.ErrorCode;
+import com.sayarti.backend.email.EmailDeliveryException;
 import com.sayarti.backend.security.jwt.JwtService;
 import com.sayarti.backend.security.oauth.GoogleIdentity;
 import com.sayarti.backend.security.oauth.GoogleTokenVerifier;
@@ -43,7 +44,7 @@ public class AuthService {
         this.googleTokens = googleTokens;
         this.emailVerification = emailVerification;
     }
-    @Transactional
+    @Transactional(noRollbackFor = EmailDeliveryException.class)
     public RegistrationResponse register(RegisterRequest r) {
         String email = normalize(r.email());
         if (users.existsByEmailIgnoreCase(email)) {
@@ -82,7 +83,7 @@ public class AuthService {
         return tokens(user);
     }
 
-    @Transactional
+    @Transactional(noRollbackFor = EmailDeliveryException.class)
     public ResendVerificationResponse resendVerification(ResendVerificationRequest request) {
         User user = users.findByEmailIgnoreCaseAndDeletedAtIsNull(normalize(request.email()))
                 .orElse(null);
