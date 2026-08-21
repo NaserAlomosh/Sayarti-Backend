@@ -23,17 +23,53 @@ Status: In Development
 
 ## Current Foundation
 
-The Java 17 Maven/Spring Boot foundation now includes local email/password authentication, hashed passwords, JWT access authentication, rotating hashed refresh tokens, logout, current-user resolution, and backend-verified Google ID-token authentication. Google sessions use the same JWT and refresh-token rotation as local sessions.
+The Java 17 Maven/Spring Boot foundation currently includes:
 
-Microsoft SQL Server is the only database engine used by the project. H2 is not used. Production and development use Microsoft SQL Server directly, while database-backed integration tests use isolated Microsoft SQL Server instances through Testcontainers.
+- Local email/password registration and login.
+- BCrypt password hashing.
+- JWT access authentication.
+- Hashed refresh-token storage and rotation.
+- Logout and refresh-token revocation.
+- Current-user resolution.
+- Backend-verified Google ID-token authentication.
+- User profile retrieval, update, and soft deletion.
+- Microsoft SQL Server persistence.
+- Flyway schema migrations.
+- Hibernate schema validation.
+- OpenAPI / Swagger documentation.
+- Microsoft SQL Server Testcontainers for database-backed integration tests.
 
-The authentication schema is managed by Flyway and its HTTP contract is documented with OpenAPI. No vehicle or other V1 business feature has been implemented yet.
+Google sessions use the same Sayarti JWT and refresh-token model as local sessions.
 
-Docker Desktop and Testcontainers connectivity have been verified locally. Testcontainers successfully detects Docker through the local Unix socket and can pull its supporting containers and the Microsoft SQL Server 2022 image.
+Microsoft SQL Server is the only relational database engine used by the project. H2 must not be introduced for integration testing.
 
-The full Maven verification remains incomplete until the SQL Server-backed test suite finishes successfully and Maven reports `BUILD SUCCESS`.
+Local verification has completed successfully with:
 
-Checklist items below remain unchecked where completion still depends on owner-provided configuration, live external services, unfinished Docker Compose configuration, complete SQL Server integration verification, or unimplemented V1 business features.
+```text
+./mvnw clean verify
+
+BUILD SUCCESS
+Tests run: 17
+Failures: 0
+Errors: 0
+Skipped: 0
+```
+
+The verified test flow includes:
+
+```text
+Docker / Testcontainers
+→ Microsoft SQL Server 2022
+→ Flyway migrations
+→ Hibernate schema validation
+→ Spring context
+→ automated tests
+→ BUILD SUCCESS
+```
+
+No Vehicle, Fuel, Maintenance, Expense, Reminder, Statistics, Dashboard, or other V1 vehicle-domain feature has been implemented yet.
+
+Email verification for LOCAL accounts is now part of the V1 scope and must be implemented before Vehicle Management begins.
 
 ---
 
@@ -55,13 +91,16 @@ The backend must use:
 - Google Authentication
 - Bean Validation
 - OpenAPI / Swagger
+- Email delivery abstraction
 - Firebase Admin SDK
 - Docker
 - JUnit 5
 - Mockito
 - Testcontainers
 
-Microsoft SQL Server is used for application persistence and database-backed integration testing. H2 must not be introduced as a replacement integration-test database.
+Microsoft SQL Server is used for application persistence and database-backed integration testing.
+
+H2 must not be introduced as an integration-test database.
 
 ---
 
@@ -70,19 +109,38 @@ Microsoft SQL Server is used for application persistence and database-backed int
 Codex must follow these rules during development:
 
 1. Read this entire README before implementing features.
-2. Read `SECRETS_SETUP.md` before configuring external integrations.
-3. Work one logical feature at a time.
-4. Do not implement features outside the V1 scope.
-5. Do not mark partially implemented features as complete.
-6. Change `- [ ] Feature` to `- [x] Feature` only after the Definition of Done is satisfied.
-7. Every external key, secret, credential, certificate, client ID, token, or configuration value that cannot be generated locally must be documented in `SECRETS_SETUP.md`.
-8. Never commit actual secrets to Git.
-9. Never hardcode secrets in Java source files.
-10. Microsoft SQL Server is the only supported relational database engine.
-11. Do not introduce H2 for integration testing.
-12. Database-backed integration tests must use Microsoft SQL Server Testcontainers.
-13. Unit tests that do not require persistence must not start database containers.
-14. Never point automated tests at development or production databases.
+2. Read `AGENTS.md` before making code changes if the file exists.
+3. Read `SECRETS_SETUP.md` before configuring external integrations.
+4. Work one logical feature at a time.
+5. Do not implement features outside the V1 scope.
+6. Do not mark partially implemented features as complete.
+7. Change:
+
+```md
+- [ ] Feature
+```
+
+to:
+
+```md
+- [x] Feature
+```
+
+only after the Definition of Done is satisfied.
+
+8. Every external key, secret, credential, certificate, client ID, token, email-provider credential, or configuration value that cannot be generated locally must be documented in `SECRETS_SETUP.md`.
+9. Never commit actual secrets to Git.
+10. Never hardcode secrets in Java source files.
+11. Microsoft SQL Server is the only supported relational database engine.
+12. Do not introduce H2 for integration testing.
+13. Database-backed integration tests must use Microsoft SQL Server Testcontainers.
+14. Pure unit tests must not start Docker/Testcontainers.
+15. Never point automated tests at development or production databases.
+16. Flyway is the source of truth for database schema changes.
+17. Keep `spring.jpa.hibernate.ddl-auto=validate`.
+18. Do not use `ddl-auto=update`.
+19. Use UTC-aware persisted timestamps consistently with the project's SQL Server mapping.
+20. Do not log passwords, OTP values, JWTs, refresh tokens, Google tokens, Firebase credentials, email-provider secrets, or database credentials.
 
 ---
 
@@ -105,70 +163,33 @@ Swagger Documentation
 +
 Unit Tests
 +
-SQL Server Integration Tests where applicable
+Microsoft SQL Server Integration Tests where applicable
 +
 Build Verification
 ```
 
 If any required part is missing, the feature stays unchecked.
 
+External integrations also require real configuration and verification before being marked complete where applicable.
+
 ---
 
 # 1. Initial Project Setup
 
 - [x] **Initialize Spring Boot Project**
-
-Create the Spring Boot project using Java 17 and Maven.
-
-Base package:
-
-```text
-com.sayarti.backend
-```
-
-Main class:
-
-```text
-SayartiApplication
-```
-
 - [x] **Add Core Dependencies**
+- [x] **Configure Maven**
 
-Required dependencies:
-
-```text
-Spring Web
-Spring Security
-Spring Data JPA
-Validation
-Microsoft SQL Server JDBC Driver
-Flyway Core
-Flyway SQL Server
-Lombok
-OpenAPI / Swagger
-JWT
-OAuth2 Client
-Firebase Admin SDK
-Spring Boot Test
-Spring Boot Testcontainers
-Testcontainers JUnit Jupiter
-Testcontainers Microsoft SQL Server
-```
-
-- [ ] **Configure Maven**
-
-Configure:
-
-```text
-Java 17
-UTF-8
-Spring Boot Maven Plugin
-```
-
-The following command must succeed before this item is considered complete:
+Verified with:
 
 ```bash
 ./mvnw clean verify
+```
+
+Result:
+
+```text
+BUILD SUCCESS
 ```
 
 ---
@@ -176,44 +197,10 @@ The following command must succeed before this item is considered complete:
 # 2. Application Configuration
 
 - [x] **Create Application Configuration**
-
-Create:
-
-```text
-src/main/resources/application.yml
-src/main/resources/application-dev.yml
-src/main/resources/application-prod.yml
-src/test/resources/application-test.yml
-```
-
 - [x] **Configure Environment Variables**
+- [ ] **Create / Finalize `.env.example`**
 
-Environment-specific and sensitive values must use environment variables.
-
-Examples:
-
-```text
-DB_HOST
-DB_PORT
-DB_NAME
-DB_USERNAME
-DB_PASSWORD
-
-JWT_ACCESS_SECRET
-JWT_REFRESH_SECRET
-JWT_ACCESS_EXPIRATION
-JWT_REFRESH_EXPIRATION
-
-GOOGLE_CLIENT_ID
-
-FIREBASE_PROJECT_ID
-FIREBASE_CLIENT_EMAIL
-FIREBASE_PRIVATE_KEY
-```
-
-Any variable requiring input from the project owner must be documented in `SECRETS_SETUP.md`.
-
-- [ ] **Create `.env.example`**
+Current expected baseline:
 
 ```env
 DB_HOST=localhost
@@ -224,7 +211,6 @@ DB_PASSWORD=
 
 JWT_ACCESS_SECRET=
 JWT_REFRESH_SECRET=
-
 JWT_ACCESS_EXPIRATION=900000
 JWT_REFRESH_EXPIRATION=2592000000
 
@@ -233,40 +219,20 @@ GOOGLE_CLIENT_ID=
 FIREBASE_PROJECT_ID=
 FIREBASE_CLIENT_EMAIL=
 FIREBASE_PRIVATE_KEY=
+
+EMAIL_OTP_EXPIRATION_SECONDS=300
+EMAIL_OTP_RESEND_COOLDOWN_SECONDS=60
+EMAIL_OTP_MAX_ATTEMPTS=5
 ```
 
-Never add real credentials.
-
-Copy `.env.example` to an ignored `.env` for Docker Compose, or export the same variables in the shell when running the application directly. Spring Boot does not read `.env` files by itself.
+When an email provider is selected, add its required environment-variable names without committing real values.
 
 ---
 
 # 3. Microsoft SQL Server
 
 - [x] **Configure SQL Server Connection**
-
-Default development settings:
-
-```text
-Host: localhost
-Port: 1433
-Database: sayarti
-```
-
-Example JDBC URL:
-
-```text
-jdbc:sqlserver://${DB_HOST}:${DB_PORT};databaseName=${DB_NAME};encrypt=true;trustServerCertificate=true
-```
-
 - [x] **Add Microsoft SQL Server JDBC Driver**
-
-Use:
-
-```text
-com.microsoft.sqlserver:mssql-jdbc
-```
-
 - [x] **Configure Hibernate**
 
 Use:
@@ -278,42 +244,20 @@ spring:
       ddl-auto: validate
 ```
 
-Never use `ddl-auto=update` as the database migration strategy. Schema changes must be managed through Flyway.
-
-### Database Testing Policy
-
-Database-backed integration tests must use an isolated Microsoft SQL Server instance through Testcontainers instead of H2.
-
-This allows tests to detect SQL Server-specific behavior involving SQL syntax, column types, constraints, indexes, Flyway migrations, Hibernate mappings, and database behavior.
-
-Unit tests that do not require persistence must not start a SQL Server container.
+Database-backed integration tests use isolated Microsoft SQL Server instances through Testcontainers.
 
 ---
 
 # 4. Flyway Database Migrations
 
 - [x] **Configure Flyway**
-
-Migration location:
-
-```text
-src/main/resources/db/migration
-```
-
-Naming convention:
-
-```text
-V1__create_users.sql
-V2__create_refresh_tokens.sql
-V3__create_vehicles.sql
-```
-
-- [ ] **Create Initial Database Schema**
+- [ ] **Complete V1 Database Schema**
 
 Required tables:
 
 - [x] `users`
 - [x] `refresh_tokens`
+- [ ] `email_verification_otps`
 - [ ] `vehicles`
 - [ ] `fuel_records`
 - [ ] `maintenance_records`
@@ -329,58 +273,39 @@ All schema changes must be performed through Flyway migrations.
 
 - [x] **Create Feature-Based Architecture**
 
-Target structure:
+Target structure includes:
 
 ```text
-src/main/java/com/sayarti/backend/
-
-├── auth/
-│   ├── controller/
-│   ├── service/
-│   ├── dto/
-│   ├── repository/
-│   ├── entity/
-│   └── mapper/
-├── user/
-├── vehicle/
-├── fuel/
-├── maintenance/
-├── expense/
-├── reminder/
-├── statistics/
-├── notification/
-├── device/
-├── security/
-│   ├── config/
-│   ├── jwt/
-│   ├── oauth/
-│   └── filter/
-├── common/
-│   ├── exception/
-│   ├── response/
-│   ├── pagination/
-│   ├── auditing/
-│   └── util/
-├── config/
-└── SayartiApplication.java
+auth/
+user/
+email/
+vehicle/
+fuel/
+maintenance/
+expense/
+reminder/
+statistics/
+notification/
+device/
+security/
+common/
+config/
 ```
 
 ---
 
 # 6. Architecture Rules
 
-- [ ] Controllers contain HTTP-related logic only.
-- [ ] Business logic belongs in services.
-- [ ] Database access goes through repositories.
-- [ ] JPA entities are never returned directly from controllers.
-- [ ] Request DTOs are used for client input.
-- [ ] Response DTOs are used for client output.
-- [ ] Constructor injection must be used.
-- [ ] Field injection must not be used.
-- [ ] Shared logic must not be duplicated.
-- [ ] Business exceptions must be explicit and meaningful.
-
-Do not use field injection with `@Autowired`.
+- [x] Controllers contain HTTP-related logic only.
+- [x] Business logic belongs in services.
+- [x] Database access goes through repositories.
+- [x] JPA entities are never returned directly from controllers.
+- [x] Request DTOs are used for client input.
+- [x] Response DTOs are used for client output.
+- [x] Constructor injection is used.
+- [x] Field injection is not used.
+- [x] Business exceptions are explicit and meaningful.
+- [ ] Shared logic remains free from unnecessary duplication as the project expands.
 
 ---
 
@@ -388,47 +313,40 @@ Do not use field injection with `@Autowired`.
 
 - [x] **Create Standard Success Response**
 - [x] **Create Standard Error Response**
-- [ ] **Create Pagination Response**
+- [x] **Create Pagination Response**
 - [ ] **Create Sorting Support**
 - [ ] **Create Date Range Filtering**
-
-Success example:
-
-```json
-{"success":true,"data":{},"message":null}
-```
-
-Error example:
-
-```json
-{"success":false,"error":{"code":"VEHICLE_NOT_FOUND","message":"Vehicle not found"}}
-```
 
 ---
 
 # 8. Global Error Handling
 
 - [x] **Create Global Exception Handler**
-
-Use `@RestControllerAdvice`.
-
-Handle validation errors, authentication errors, authorization errors, resource not found, business validation errors, database errors, and unexpected errors.
-
 - [x] **Create Error Code Enum**
 
-Initial codes:
+Current and planned codes include:
 
 ```text
 VALIDATION_ERROR
 UNAUTHORIZED
 FORBIDDEN
 INTERNAL_SERVER_ERROR
+
 AUTH_INVALID_CREDENTIALS
 AUTH_EMAIL_ALREADY_EXISTS
 AUTH_TOKEN_EXPIRED
 AUTH_INVALID_TOKEN
 AUTH_INVALID_REFRESH_TOKEN
 AUTH_GOOGLE_LOGIN_FAILED
+AUTH_ACCOUNT_LINKING_REQUIRED
+
+AUTH_EMAIL_NOT_VERIFIED
+AUTH_EMAIL_ALREADY_VERIFIED
+AUTH_OTP_INVALID
+AUTH_OTP_EXPIRED
+AUTH_OTP_ATTEMPTS_EXCEEDED
+AUTH_OTP_RESEND_TOO_SOON
+
 USER_NOT_FOUND
 VEHICLE_NOT_FOUND
 VEHICLE_ACCESS_DENIED
@@ -440,22 +358,32 @@ EXPENSE_NOT_FOUND
 REMINDER_NOT_FOUND
 ```
 
+OTP-related error codes remain planned until Email Verification is implemented.
+
 ---
 
 # 9. API Versioning
 
 - [x] **Configure API Base Path**
 
-All V1 APIs must start with `/api/v1`.
+All V1 APIs start with:
+
+```text
+/api/v1
+```
 
 ---
 
 # 10. Swagger / OpenAPI
 
 - [x] **Configure Swagger**
-- [x] **Document All APIs**
+- [x] **Document Existing APIs**
 
-Swagger UI should be available in development at `/swagger-ui/index.html`.
+Swagger UI:
+
+```text
+/swagger-ui/index.html
+```
 
 ---
 
@@ -468,16 +396,6 @@ Swagger UI should be available in development at `/swagger-ui/index.html`.
 - [x] **Configure CORS**
 - [x] **Configure Security Headers**
 
-Use `SecurityFilterChain` and `SessionCreationPolicy.STATELESS`.
-
-Public routes:
-
-```text
-/api/v1/auth/**
-/swagger-ui/**
-/v3/api-docs/**
-```
-
 ---
 
 # 12. JWT Authentication
@@ -489,111 +407,400 @@ Public routes:
 - [x] **Create Refresh Token Storage**
 - [x] **Implement Refresh Token Rotation**
 
-Access token header:
-
-```http
-Authorization: Bearer <access-token>
-```
-
-Recommended starting expirations:
-
-```text
-Access Token: 15 minutes
-Refresh Token: 30 days
-```
-
-Store refresh tokens securely, preferably hashed.
-
 ---
 
 # 13. User Authentication
 
-- [x] **Register User** — `POST /api/v1/auth/register`
-- [x] **Login With Email and Password** — `POST /api/v1/auth/login`
-- [x] **Refresh Session** — `POST /api/v1/auth/refresh`
-- [x] **Logout** — `POST /api/v1/auth/logout`
+## Registration
 
-Registration requires first name, last name, valid unique email, password validation, password hashing, and DTO validation.
+- [x] **Register LOCAL User**
 
-Login returns access token, refresh token, and user information.
+Endpoint:
 
-Logout must invalidate the refresh token.
+```http
+POST /api/v1/auth/register
+```
+
+Current registration validates:
+
+- First name.
+- Last name.
+- Email.
+- Unique email.
+- Password.
+- Password hashing.
+- DTO validation.
+
+After Email Verification is implemented, LOCAL registration becomes:
+
+```text
+Register
+→ Create LOCAL user with emailVerified = false
+→ Generate verification OTP
+→ Send verification email
+→ Do not issue normal authenticated application access yet
+```
+
+## Login
+
+- [x] **Login With Email and Password**
+
+Endpoint:
+
+```http
+POST /api/v1/auth/login
+```
+
+After Email Verification is implemented, unverified LOCAL accounts must be rejected with:
+
+```text
+AUTH_EMAIL_NOT_VERIFIED
+```
+
+## Refresh
+
+- [x] **Refresh Session**
+
+```http
+POST /api/v1/auth/refresh
+```
+
+## Logout
+
+- [x] **Logout**
+
+```http
+POST /api/v1/auth/logout
+```
 
 ---
 
-# 14. Google OAuth 2.0
+# 14. Email Verification for LOCAL Accounts
+
+Email Verification is required for LOCAL email/password registration before Vehicle Management begins.
+
+Google users whose Google ID token contains a verified email do not require Sayarti OTP verification.
+
+## Target Registration Flow
+
+```text
+POST /api/v1/auth/register
+        ↓
+Create LOCAL user
+emailVerified = false
+        ↓
+Generate secure 6-digit OTP
+        ↓
+Store OTP hash
+        ↓
+Send OTP to registered email
+        ↓
+POST /api/v1/auth/verify-email
+        ↓
+Verify OTP
+        ↓
+emailVerified = true
+        ↓
+Issue Sayarti access + refresh tokens
+```
+
+- [ ] **Add Email Verification State to User**
+
+Add:
+
+```text
+emailVerified
+```
+
+Rules:
+
+```text
+LOCAL registration → false
+Verified Google identity → true
+```
+
+- [ ] **Create Email Verification OTP Entity and Table**
+
+Recommended fields:
+
+```text
+id
+userId
+otpHash
+expiresAt
+attemptCount
+verifiedAt
+createdAt
+```
+
+Optional fields:
+
+```text
+invalidatedAt
+lastAttemptAt
+```
+
+Requirements:
+
+- Microsoft SQL Server.
+- Flyway.
+- UTC-aware timestamp strategy.
+- Foreign key to user.
+- Useful indexes.
+- Never persist OTP plaintext.
+
+- [ ] **Create OTP Generation Service**
+
+Requirements:
+
+- Cryptographically secure 6-digit numeric OTP.
+- Hash before persistence.
+- Never log OTP in production.
+- Keep generation separate from delivery.
+
+Recommended config:
+
+```text
+OTP Length: 6 digits
+OTP Expiration: 5 minutes
+Maximum Attempts: 5
+Resend Cooldown: 60 seconds
+```
+
+Suggested properties:
+
+```text
+EMAIL_OTP_EXPIRATION_SECONDS
+EMAIL_OTP_MAX_ATTEMPTS
+EMAIL_OTP_RESEND_COOLDOWN_SECONDS
+```
+
+- [ ] **Create Email Delivery Abstraction**
+
+Create an abstraction such as:
+
+```text
+EmailService
+```
+
+Authentication logic must not depend directly on a provider.
+
+Possible providers later:
+
+```text
+SMTP
+Resend
+SendGrid
+AWS SES
+```
+
+Do not select or hardcode a provider silently.
+
+When a provider is implemented, update `SECRETS_SETUP.md` with exact credential instructions.
+
+- [ ] **Modify LOCAL Registration to Start Email Verification**
+
+After creating a LOCAL user:
+
+1. Set `emailVerified = false`.
+2. Generate OTP.
+3. Store only OTP hash.
+4. Send verification email.
+5. Do not issue normal access/refresh tokens before successful verification.
+
+- [ ] **Verify Email OTP**
+
+Endpoint:
+
+```http
+POST /api/v1/auth/verify-email
+```
+
+Example:
+
+```json
+{
+  "email": "user@example.com",
+  "otp": "123456"
+}
+```
+
+Successful flow:
+
+```text
+Find eligible LOCAL user
+→ Find active verification OTP
+→ Check expiration
+→ Check attempt limit
+→ Verify OTP hash
+→ Mark verification record used
+→ Mark user emailVerified = true
+→ Issue access token
+→ Issue refresh token
+→ Return AuthResponse
+```
+
+- [ ] **Resend Email Verification OTP**
+
+Endpoint:
+
+```http
+POST /api/v1/auth/resend-verification
+```
+
+Requirements:
+
+- Resend cooldown.
+- Rate limiting.
+- Invalidate previous active OTP.
+- Generate a new OTP.
+- Store only hash.
+- Send new email.
+- Avoid multiple valid OTPs.
+- Avoid unnecessary account enumeration.
+
+- [ ] **Block Unverified LOCAL Login**
+
+If:
+
+```text
+emailVerified = false
+```
+
+then login must not issue tokens.
+
+Return:
+
+```text
+AUTH_EMAIL_NOT_VERIFIED
+```
+
+- [ ] **Protect Refresh Flow for Unverified LOCAL Accounts**
+
+Unverified LOCAL accounts must not gain access through refresh behavior.
+
+- [ ] **Handle Verified Google Users**
+
+Verified Google identities must have:
+
+```text
+emailVerified = true
+```
+
+and must not require Sayarti OTP.
+
+- [ ] **Prevent OTP Abuse**
+
+Implement:
+
+- Attempt limit.
+- Resend cooldown.
+- Endpoint rate limiting.
+- OTP expiration.
+- Single active OTP policy.
+- No plaintext persistence.
+- No OTP logging.
+- Safe errors.
+
+- [ ] **Email Verification Swagger Documentation**
+
+Document registration verification behavior, verify endpoint, resend endpoint, OTP errors, and resend/rate-limit behavior.
+
+- [ ] **Email Verification Tests**
+
+Required coverage:
+
+- [ ] LOCAL registration creates unverified user.
+- [ ] OTP is stored hashed.
+- [ ] Valid OTP verifies email.
+- [ ] Verification issues access and refresh tokens.
+- [ ] Invalid OTP rejected.
+- [ ] Expired OTP rejected.
+- [ ] Used OTP rejected.
+- [ ] Invalidated OTP rejected.
+- [ ] Maximum attempts enforced.
+- [ ] Resend creates a new OTP.
+- [ ] Previous OTP invalidated.
+- [ ] Resend cooldown enforced.
+- [ ] Unverified LOCAL login blocked.
+- [ ] Verified LOCAL login succeeds.
+- [ ] Unverified refresh access blocked.
+- [ ] Verified Google user bypasses Sayarti OTP.
+- [ ] Database-backed tests use Microsoft SQL Server Testcontainers.
+- [ ] Pure OTP unit tests do not start Testcontainers unless persistence is required.
+
+Email Verification is complete only when:
+
+```bash
+./mvnw clean verify
+```
+
+returns:
+
+```text
+BUILD SUCCESS
+```
+
+and the selected email provider has been verified where provider integration is part of the task.
+
+---
+
+# 15. Google OAuth 2.0
 
 - [x] **Configure Google OAuth 2.0**
 - [x] **Implement Google Login Flow**
 - [x] **Verify Google Identity Token**
 - [x] **Handle Existing Users / Account Linking**
 
-The mobile application obtains a Google ID token using the `openid`, `email`, and `profile` scopes and sends only that token to `POST /api/v1/auth/google` as `{"idToken":"<google-id-token>"}`.
+Endpoint:
 
-The backend verifies Google's signature, issuer, `GOOGLE_CLIENT_ID` audience, expiration, subject, and verified email. Names and email are read exclusively from verified token claims.
+```http
+POST /api/v1/auth/google
+```
 
-Automatic linking to an existing `LOCAL` account with the same verified email is intentionally forbidden. The endpoint returns `409 AUTH_ACCOUNT_LINKING_REQUIRED`.
+The backend verifies:
 
-No `GOOGLE_CLIENT_SECRET` is used or required because the backend does not exchange an authorization code.
+- Google signature.
+- Issuer.
+- `GOOGLE_CLIENT_ID`.
+- Expiration.
+- Subject.
+- Verified email.
+
+Automatic linking to an existing LOCAL account with the same verified email is forbidden.
+
+Return:
+
+```text
+409 AUTH_ACCOUNT_LINKING_REQUIRED
+```
+
+No `GOOGLE_CLIENT_SECRET` is required for the current ID-token verification flow.
 
 ---
 
-# 15. User Profile
-
-Fields:
-
-```text
-id
-firstName
-lastName
-email
-passwordHash
-authProvider
-createdAt
-updatedAt
-deletedAt
-```
-
-Providers: `LOCAL`, `GOOGLE`.
+# 16. User Profile
 
 - [x] **Create User Entity**
-- [x] **Get Current User** — `GET /api/v1/users/me`
-- [ ] **Update Current User** — `PATCH /api/v1/users/me`
-- [ ] **Delete Account** — `DELETE /api/v1/users/me`
+- [x] **Get Current User**
+- [x] **Update Current User**
+- [x] **Delete Account**
+
+Endpoints:
+
+```http
+GET /api/v1/users/me
+PATCH /api/v1/users/me
+DELETE /api/v1/users/me
+```
+
+Only safe profile fields may be edited.
+
+Account deletion revokes active refresh tokens and prevents future authentication.
 
 ---
 
-# 16. Vehicle Management
-
-Fields:
-
-```text
-id
-userId
-brand
-model
-year
-licensePlate
-fuelType
-currentMileage
-nickname
-imageUrl
-createdAt
-updatedAt
-deletedAt
-```
-
-Fuel types:
-
-```text
-GASOLINE_90
-GASOLINE_95
-GASOLINE_98
-DIESEL
-HYBRID
-ELECTRIC
-OTHER
-```
+# 17. Vehicle Management
 
 - [ ] Create Vehicle Entity
 - [ ] Create Vehicle Repository
@@ -605,13 +812,13 @@ OTHER
 - [ ] Update Mileage — `PATCH /api/v1/vehicles/{vehicleId}/mileage`
 - [ ] Delete Vehicle — `DELETE /api/v1/vehicles/{vehicleId}`
 
-Mileage must not normally decrease. Use soft delete.
+Use soft delete.
 
 ---
 
-# 17. Vehicle Ownership Security
+# 18. Vehicle Ownership Security
 
-- [ ] **Create Vehicle Ownership Validation**
+- [ ] Create Vehicle Ownership Validation
 - [ ] Protect Vehicle APIs
 - [ ] Protect Fuel APIs
 - [ ] Protect Maintenance APIs
@@ -620,43 +827,22 @@ Mileage must not normally decrease. Use soft delete.
 - [ ] Protect Statistics APIs
 - [ ] Protect Dashboard APIs
 
-Every vehicle-owned resource must validate ownership against the authenticated user.
-
 ---
 
-# 18. Fuel Tracking
-
-Fields:
-
-```text
-id
-vehicleId
-mileage
-liters
-totalCost
-pricePerLiter
-fuelType
-isFullTank
-date
-notes
-createdAt
-updatedAt
-```
+# 19. Fuel Tracking
 
 - [ ] Create Fuel Entity
 - [ ] Create Fuel Repository
 - [ ] Create Fuel DTOs
-- [ ] Create Fuel Record — `POST /api/v1/vehicles/{vehicleId}/fuel`
-- [ ] Get Fuel History — `GET /api/v1/vehicles/{vehicleId}/fuel`
-- [ ] Get Fuel Record — `GET /api/v1/vehicles/{vehicleId}/fuel/{fuelId}`
-- [ ] Update Fuel Record — `PATCH /api/v1/vehicles/{vehicleId}/fuel/{fuelId}`
-- [ ] Delete Fuel Record — `DELETE /api/v1/vehicles/{vehicleId}/fuel/{fuelId}`
-
-Fuel history supports pagination, sorting, and date filtering.
+- [ ] Create Fuel Record
+- [ ] Get Fuel History
+- [ ] Get Fuel Record
+- [ ] Update Fuel Record
+- [ ] Delete Fuel Record
 
 ---
 
-# 19. Fuel Calculations
+# 20. Fuel Calculations
 
 - [ ] Calculate Distance Between Refills
 - [ ] Calculate Fuel Efficiency
@@ -666,113 +852,59 @@ Fuel history supports pagination, sorting, and date filtering.
 - [ ] Calculate Total Fuel Cost
 - [ ] Calculate Average Fuel Efficiency
 
-```text
-Distance = Current Odometer - Previous Odometer
-km/L = Distance / Liters
-L/100km = (Liters / Distance) × 100
-Fuel Cost Per KM = Fuel Cost / Distance
-```
-
 ---
 
-# 20. Maintenance
-
-Types:
-
-```text
-ENGINE_OIL
-OIL_FILTER
-AIR_FILTER
-CABIN_FILTER
-BRAKES
-TIRES
-BATTERY
-TRANSMISSION
-COOLANT
-SPARK_PLUGS
-GENERAL_SERVICE
-OTHER
-```
+# 21. Maintenance
 
 - [ ] Create Maintenance Entity
 - [ ] Create Maintenance Repository
 - [ ] Create Maintenance DTOs
-- [ ] Create Maintenance Record — `POST /api/v1/vehicles/{vehicleId}/maintenance`
-- [ ] Get Maintenance History — `GET /api/v1/vehicles/{vehicleId}/maintenance`
-- [ ] Get Maintenance Record — `GET /api/v1/vehicles/{vehicleId}/maintenance/{maintenanceId}`
-- [ ] Update Maintenance Record — `PATCH /api/v1/vehicles/{vehicleId}/maintenance/{maintenanceId}`
-- [ ] Delete Maintenance Record — `DELETE /api/v1/vehicles/{vehicleId}/maintenance/{maintenanceId}`
+- [ ] Create Maintenance Record
+- [ ] Get Maintenance History
+- [ ] Get Maintenance Record
+- [ ] Update Maintenance Record
+- [ ] Delete Maintenance Record
 
 ---
 
-# 21. Expenses
-
-Categories:
-
-```text
-INSURANCE
-LICENSE
-PARKING
-CAR_WASH
-TOLLS
-FINES
-ACCESSORIES
-LOAN_PAYMENT
-OTHER
-```
+# 22. Expenses
 
 - [ ] Create Expense Entity
 - [ ] Create Expense Repository
 - [ ] Create Expense DTOs
-- [ ] Create Expense — `POST /api/v1/vehicles/{vehicleId}/expenses`
-- [ ] Get Expenses — `GET /api/v1/vehicles/{vehicleId}/expenses`
-- [ ] Get Expense — `GET /api/v1/vehicles/{vehicleId}/expenses/{expenseId}`
-- [ ] Update Expense — `PATCH /api/v1/vehicles/{vehicleId}/expenses/{expenseId}`
-- [ ] Delete Expense — `DELETE /api/v1/vehicles/{vehicleId}/expenses/{expenseId}`
+- [ ] Create Expense
+- [ ] Get Expenses
+- [ ] Get Expense
+- [ ] Update Expense
+- [ ] Delete Expense
 
 ---
 
-# 22. Reminders
-
-Types:
-
-```text
-LICENSE
-INSURANCE
-ENGINE_OIL
-MAINTENANCE
-TIRES
-BATTERY
-CUSTOM
-```
+# 23. Reminders
 
 - [ ] Create Reminder Entity
 - [ ] Create Reminder Repository
 - [ ] Create Reminder DTOs
-- [ ] Create Reminder — `POST /api/v1/vehicles/{vehicleId}/reminders`
-- [ ] Get Reminders — `GET /api/v1/vehicles/{vehicleId}/reminders`
-- [ ] Update Reminder — `PATCH /api/v1/vehicles/{vehicleId}/reminders/{reminderId}`
-- [ ] Complete Reminder — `PATCH /api/v1/vehicles/{vehicleId}/reminders/{reminderId}/complete`
-- [ ] Delete Reminder — `DELETE /api/v1/vehicles/{vehicleId}/reminders/{reminderId}`
-
-Support date-based, mileage-based, and combined reminders.
+- [ ] Create Reminder
+- [ ] Get Reminders
+- [ ] Update Reminder
+- [ ] Complete Reminder
+- [ ] Delete Reminder
 
 ---
 
-# 23. Device Management
-
-Platforms: `ANDROID`, `IOS`.
+# 24. Device Management
 
 - [ ] Create Device Entity
 - [ ] Create Device Repository
 - [ ] Create Device DTOs
-- [ ] Register Device — `POST /api/v1/devices`
+- [ ] Register Device
 - [ ] Update FCM Token
 - [ ] Delete Device
 
 ---
 
-# 24. Firebase Cloud Messaging
+# 25. Firebase Cloud Messaging
 
 - [ ] Configure Firebase Admin SDK
 - [ ] Create Notification Service
@@ -784,11 +916,9 @@ Platforms: `ANDROID`, `IOS`.
 - [ ] Mileage Reminder Notification
 - [ ] Custom Reminder Notification
 
-Any required Firebase credential must be documented in `SECRETS_SETUP.md`.
-
 ---
 
-# 25. Reminder Scheduler
+# 26. Reminder Scheduler
 
 - [ ] Enable Scheduling
 - [ ] Create Reminder Scheduler
@@ -796,100 +926,80 @@ Any required Firebase credential must be documented in `SECRETS_SETUP.md`.
 - [ ] Check Mileage-Based Reminders
 - [ ] Prevent Duplicate Notifications
 
-Use `@EnableScheduling` and `@Scheduled`.
-
 ---
 
-# 26. Statistics
-
-Periods: `CURRENT_MONTH`, `PREVIOUS_MONTH`, `YEAR`, `CUSTOM_RANGE`, `ALL_TIME`.
+# 27. Statistics
 
 - [ ] Create Statistics Service
-- [ ] Create General Statistics Endpoint — `GET /api/v1/vehicles/{vehicleId}/statistics`
-
-Return fuel cost, maintenance cost, other expenses, total cost, and distance driven.
+- [ ] Create General Statistics Endpoint
 
 ---
 
-# 27. Fuel Statistics
+# 28. Fuel Statistics
 
-- [ ] Create Fuel Statistics Endpoint — `GET /api/v1/vehicles/{vehicleId}/statistics/fuel`
-
-Return total liters, total fuel cost, average km/L, average L/100km, cost per kilometer, and distance driven.
+- [ ] Create Fuel Statistics Endpoint
 
 ---
 
-# 28. Maintenance Statistics
+# 29. Maintenance Statistics
 
-- [ ] Create Maintenance Statistics Endpoint — `GET /api/v1/vehicles/{vehicleId}/statistics/maintenance`
-
-Return total maintenance cost, maintenance count, and cost by maintenance type.
+- [ ] Create Maintenance Statistics Endpoint
 
 ---
 
-# 29. Expense Statistics
+# 30. Expense Statistics
 
-- [ ] Create Expense Statistics Endpoint — `GET /api/v1/vehicles/{vehicleId}/statistics/expenses`
-
-Return total expenses, expenses by category, and monthly expenses.
+- [ ] Create Expense Statistics Endpoint
 
 ---
 
-# 30. True Vehicle Cost
+# 31. True Vehicle Cost
 
 - [ ] Calculate Total Vehicle Cost
 - [ ] Calculate Average Monthly Cost
 - [ ] Calculate Cost Per Kilometer
-- [ ] Create Total Cost Endpoint — `GET /api/v1/vehicles/{vehicleId}/statistics/total-cost`
-
-```text
-Total Vehicle Cost = Fuel + Maintenance + Expenses
-```
-
-Never count the same financial transaction twice.
+- [ ] Create Total Cost Endpoint
 
 ---
 
-# 31. Dashboard
+# 32. Dashboard
 
-- [ ] Create Vehicle Dashboard Endpoint — `GET /api/v1/vehicles/{vehicleId}/dashboard`
-
-Return vehicle information, current mileage, monthly total cost, monthly fuel cost, average fuel efficiency, upcoming maintenance, upcoming reminders, and recent activity.
+- [ ] Create Vehicle Dashboard Endpoint
 
 ---
 
-# 32. Recent Vehicle Activity
+# 33. Recent Vehicle Activity
 
-- [ ] **Create Activity Feed**
-
-Combine fuel, maintenance, and expenses. Sort newest first.
+- [ ] Create Activity Feed
 
 ---
 
-# 33. JPA Auditing
+# 34. JPA Auditing
 
 - [ ] Enable JPA Auditing
 - [ ] Create Base Auditable Entity
 
-Use `@EnableJpaAuditing`, `@CreatedDate`, and `@LastModifiedDate`.
-
 ---
 
-# 34. Soft Delete
+# 35. Soft Delete
 
 - [ ] Implement Vehicle Soft Delete
 - [ ] Exclude Deleted Vehicles
 
 ---
 
-# 35. Database Indexes
+# 36. Database Indexes
 
-- [ ] **Create Required Indexes**
+- [ ] Complete Required V1 Indexes
 
-Recommended:
+Recommended areas:
 
 ```text
 users.email
+users.google_subject
+refresh_tokens.user_id
+email_verification_otps.user_id
+email_verification_otps.expires_at
 vehicles.user_id
 fuel_records.vehicle_id
 fuel_records.date
@@ -908,37 +1018,23 @@ devices.fcm_token
 
 ---
 
-# 36. Logging
+# 37. Logging
 
-- [ ] **Configure Logging**
+- [ ] Configure Application Request Logging
 
-Log request ID, HTTP method, path, response status, execution time, and unexpected exceptions.
-
-Never log passwords, password hashes, access tokens, refresh tokens, authorization headers, Google secrets, Firebase private keys, FCM tokens, or database passwords.
+Never log passwords, password hashes, OTP values, OTP hashes, JWTs, refresh tokens, Google tokens, Firebase keys, FCM tokens, email-provider credentials, or DB passwords.
 
 ---
 
-# 37. Docker
+# 38. Docker
 
-- [ ] **Create Backend Dockerfile**
-- [ ] **Create Docker Compose**
-- [ ] **Configure SQL Server Container**
-- [x] **Verify Local Docker Environment**
-- [x] **Verify Testcontainers Docker Connectivity**
+- [ ] Create / Finalize Backend Dockerfile
+- [ ] Create / Finalize Docker Compose
+- [ ] Configure SQL Server Container
+- [x] Verify Local Docker Environment
+- [x] Verify Testcontainers Docker Connectivity
 
-Verified locally with Docker Desktop, Docker Engine 29.x, Linux containers, Apple Silicon, and Testcontainers 1.21.3.
-
-Verification commands:
-
-```bash
-docker --version
-docker info
-docker ps
-```
-
-Testcontainers successfully detected the Docker environment through `unix:///var/run/docker.sock`.
-
-The local compatibility resource is:
+Compatibility resource:
 
 ```text
 src/test/resources/docker-java.properties
@@ -948,42 +1044,15 @@ src/test/resources/docker-java.properties
 api.version=1.44
 ```
 
-Docker Compose must eventually include the Spring Boot API and Microsoft SQL Server.
+---
 
-Final verification:
+# 39. Development Seed Data
 
-```bash
-docker compose up
-```
+- [ ] Create Development Seed
 
 ---
 
-# 38. Development Seed Data
-
-- [ ] **Create Development Seed**
-
-Create development-only demo user, vehicle, fuel records, maintenance records, expenses, and reminders.
-
-Never create production seed credentials.
-
----
-
-# 39. Testing
-
-Testing stack:
-
-```text
-JUnit 5
-Mockito
-Spring Boot Test
-MockMvc
-Testcontainers
-Microsoft SQL Server
-```
-
-Pure unit tests must not start database containers unless persistence is genuinely required.
-
-Database-backed integration tests must use isolated Microsoft SQL Server Testcontainers. H2 must not be used.
+# 40. Testing
 
 ## Authentication Tests
 
@@ -997,6 +1066,35 @@ Database-backed integration tests must use isolated Microsoft SQL Server Testcon
 - [x] Logout
 - [x] Google Authentication
 
+## Email Verification Tests
+
+- [ ] Registration Creates Unverified LOCAL User
+- [ ] OTP Stored Hashed
+- [ ] Valid OTP
+- [ ] Invalid OTP
+- [ ] Expired OTP
+- [ ] Used OTP
+- [ ] Maximum Attempts
+- [ ] Resend OTP
+- [ ] Previous OTP Invalidated
+- [ ] Resend Cooldown
+- [ ] Unverified LOCAL Login Blocked
+- [ ] Verified LOCAL Login
+- [ ] Unverified Refresh Access Blocked
+- [ ] Verified Google Account Bypasses OTP
+
+## User Profile Tests
+
+- [x] Get Current User
+- [x] Unauthenticated Profile Access
+- [x] Update First Name
+- [x] Update Last Name
+- [x] Profile Validation
+- [x] Protected Fields Not Writable
+- [x] Delete Account
+- [x] Refresh Tokens Revoked After Deletion
+- [x] Deleted User Cannot Authenticate
+
 ## Vehicle Tests
 
 - [ ] Create Vehicle
@@ -1004,7 +1102,9 @@ Database-backed integration tests must use isolated Microsoft SQL Server Testcon
 - [ ] Get Vehicle
 - [ ] Update Vehicle
 - [ ] Update Mileage
+- [ ] Reject Mileage Decrease
 - [ ] Delete Vehicle
+- [ ] Deleted Vehicle Excluded
 - [ ] Ownership Validation
 
 ## Fuel Tests
@@ -1057,90 +1157,64 @@ Database-backed integration tests must use isolated Microsoft SQL Server Testcon
 
 ---
 
-# 40. Testcontainers
+# 41. Testcontainers
 
-- [x] **Configure Microsoft SQL Server Testcontainer**
-- [x] **Configure Spring Boot Testcontainers Integration**
-- [x] **Remove H2 Test Database**
-- [x] **Verify Docker Connectivity**
-- [ ] **Verify Complete SQL Server Integration Test Suite**
+- [x] Configure Microsoft SQL Server Testcontainer
+- [x] Configure Spring Boot Testcontainers Integration
+- [x] Remove H2 Test Database
+- [x] Verify Docker Connectivity
+- [x] Verify Existing SQL Server Integration Test Suite
 
-Database-backed integration tests use Microsoft SQL Server 2022, Testcontainers, Docker Desktop, and Spring Boot service connections.
-
-Required dependencies:
-
-```text
-org.springframework.boot:spring-boot-testcontainers
-org.testcontainers:junit-jupiter
-org.testcontainers:mssqlserver
-```
-
-SQL Server image:
-
-```text
-mcr.microsoft.com/mssql/server:2022-latest
-```
-
-Integration tests must never connect to development or production databases for destructive operations.
-
-The Testcontainers database must be isolated and disposable.
-
-Full verification requires:
-
-```bash
-./mvnw clean verify
-```
-
-to finish with all SQL Server-backed integration tests passing.
-
----
-
-# 41. Final Build Verification
-
-- [ ] **Maven Build Passes**
-- [ ] **All Automated Tests Pass**
-- [ ] **SQL Server Integration Tests Pass**
-- [ ] **Application Starts Using Development Profile**
-- [ ] **Application Starts Using Production Profile Configuration**
-- [ ] **Docker Build Passes**
-- [x] **Local Docker Environment Verified**
-- [x] **Testcontainers Docker Connectivity Verified**
-
-Verification command:
-
-```bash
-./mvnw clean verify
-```
-
-Successful verification requires compilation, unit tests, SQL Server Testcontainer startup, Flyway migrations, Hibernate schema validation, integration tests, and finally:
+Current verified baseline:
 
 ```text
 BUILD SUCCESS
+Tests run: 17
+Failures: 0
+Errors: 0
+Skipped: 0
 ```
 
-No production secrets may be committed.
+Future DB-backed feature tests must continue using the shared SQL Server Testcontainers setup.
 
-The repository contains unit, context, security, and authentication integration tests covering response serialization, validation and explicit exception mapping, protected/public security routes, JWT validation, password encoding, registration, login, refresh-token rotation, logout, current-user access, and Google authentication behavior.
+---
 
-The test infrastructure has been migrated away from H2. Database-backed integration tests target Microsoft SQL Server through Testcontainers.
+# 42. Final Build Verification
+
+- [x] Current Maven Build Passes
+- [x] Current Automated Tests Pass
+- [x] Current SQL Server Integration Tests Pass
+- [ ] Application Starts Using Development Profile Against Development SQL Server
+- [ ] Application Starts Using Production Profile Configuration
+- [ ] Docker Compose Stack Verified
+- [ ] Production Verification
+
+Every new feature must rerun:
+
+```bash
+./mvnw clean verify
+```
+
+before its own checklist items are marked complete.
 
 ---
 
 # V1 Main Feature Progress
 
 - [x] Project Setup
-- [ ] Microsoft SQL Server
-- [ ] Flyway
-- [ ] Common API Infrastructure
+- [x] Microsoft SQL Server
+- [x] Flyway Infrastructure
+- [x] Common API Infrastructure
 - [x] Global Error Handling
 - [x] Spring Security
 - [x] JWT Authentication
-- [x] Registration
-- [x] Email / Password Login
+- [x] Registration Base Flow
+- [ ] Email Verification
+- [x] Email / Password Login Base Flow
 - [x] Refresh Tokens
 - [x] Logout
 - [x] Google Authentication
-- [ ] User Profile
+- [x] User Profile
 - [ ] Vehicle Management
 - [ ] Vehicle Ownership Security
 - [ ] Fuel Tracking
@@ -1156,15 +1230,15 @@ The test infrastructure has been migrated away from H2. Database-backed integrat
 - [ ] Dashboard
 - [ ] Recent Activity
 - [x] Swagger
-- [ ] Testing
-- [ ] Docker
+- [ ] Full V1 Testing
+- [ ] Docker Compose
 - [ ] Production Verification
 
 ---
 
 # Not Included in V1
 
-Codex must not implement the following features unless the project owner explicitly changes the scope:
+Codex must not implement the following unless the project owner explicitly changes scope:
 
 ```text
 AI Assistant
@@ -1180,20 +1254,33 @@ Multiple Drivers
 Payments
 Subscriptions
 Social Features
+Explicit LOCAL ↔ Google Account Linking UI/API
 ```
 
 ---
 
 # Missing Configuration Rule
 
-Whenever Codex encounters an implementation requiring project-owner input such as an API key, client ID, client secret, private key, Firebase credential, Google OAuth credential, certificate, production URL, external service account, or signing key, Codex must:
+Whenever Codex encounters implementation requiring project-owner input such as an API key, client ID, client secret, private key, Firebase credential, Google OAuth credential, email-provider credential, SMTP credential, certificate, production URL, external service account, or signing key, Codex must:
 
 1. Continue implementing everything possible without the missing value.
 2. Never invent credentials.
 3. Never add fake production values.
-4. Add the missing requirement to `SECRETS_SETUP.md`.
-5. Document the exact name, purpose, required/optional status, environment variable name, where to obtain it, setup instructions, configuration location, dependencies, and verification method.
-6. Leave the related feature unchecked until it is actually verified.
+4. Never hardcode real secrets.
+5. Add the missing requirement to `SECRETS_SETUP.md`.
+6. Document:
+   - Exact name.
+   - Purpose.
+   - Required/optional status.
+   - Environment-variable name.
+   - Where to obtain it.
+   - Exact setup steps.
+   - Where to configure it.
+   - What depends on it.
+   - How to verify it.
+7. Leave external-integration verification unchecked until it has actually been verified.
+
+For Email Verification specifically, once the email provider is selected, `SECRETS_SETUP.md` must document exactly where the project owner obtains the required email credentials and where they are configured.
 
 ---
 
@@ -1203,10 +1290,10 @@ Before each task:
 
 ```text
 1. Read README.md.
-2. Read AGENTS.md.
+2. Read AGENTS.md if present.
 3. Read SECRETS_SETUP.md.
 4. Inspect the existing implementation.
-5. Identify the next unfinished requested feature.
+5. Identify the exact requested unfinished feature.
 ```
 
 During implementation:
@@ -1228,12 +1315,14 @@ Handle errors.
 Add Swagger documentation.
 Add appropriate tests.
 Never hardcode secrets.
+Use the existing UTC timestamp strategy.
+Keep Java and SQL Server types consistent.
 Use consistent standard Java formatting.
 Keep code readable and properly indented.
 Do not generate compressed or minified-looking code.
-Format all Java files created or modified by the task before completion.
-Organize imports and remove unused imports.
-Avoid unrelated formatting changes that create noisy diffs.
+Organize imports.
+Remove unused imports.
+Avoid unrelated changes.
 ```
 
 After implementation:
@@ -1241,16 +1330,14 @@ After implementation:
 ```text
 Run relevant unit tests.
 Run SQL Server integration tests where applicable.
-Run the full Maven build when appropriate.
-Fix failures.
+Run ./mvnw clean verify.
+Fix all failures.
 Do not mark build verification complete without BUILD SUCCESS.
-Update README checklist.
+Update README.md only for truly completed items.
 Update SECRETS_SETUP.md if new owner configuration is required.
-Do not mark incomplete features complete.
-Format all files changed by the task.
-Review changed files for indentation, spacing, line wrapping, imports, and readability.
-Ensure no generated Java code is compressed or unnecessarily placed on a single line.
-Review the final Git diff for unnecessary formatting-only changes.
+Do not mark external integration complete without real verification where applicable.
+Do not start the next feature.
+Review the final diff for correctness and unnecessary changes.
 ```
 
 ---
@@ -1270,50 +1357,23 @@ Easy to integrate with Flutter
 
 The priority is building a stable core product, not maximizing the number of features.
 
-### Code Formatting and Readability
+## Code Formatting and Readability
 
-Codex must write clean, consistently formatted, production-readable code.
+Codex must write clean, consistently formatted, production-readable Java.
 
-Generated code must never be compressed, minified, or unnecessarily placed on a
-single line merely to reduce line count.
-
-Codex must preserve the existing project's formatting conventions and must format
-every file created or modified before completing a task.
-
-#### Java Formatting Rules
+Rules:
 
 ```text
 Use 4 spaces for indentation.
 Do not use tabs for indentation.
 Keep one statement per line.
 Use spaces around operators and after commas.
-Use braces consistently for if, else, for, while, switch, and similar blocks.
-Separate logical sections inside methods with blank lines where useful.
+Use braces consistently.
+Separate logical method sections where useful.
 Avoid excessively long lines.
-Break long method calls into readable multiline blocks.
-Break long constructors and argument lists into readable multiline blocks.
-Break fluent and chained calls across multiple lines when necessary.
-Keep annotations readable.
+Break long method calls and argument lists into readable multiline blocks.
 Organize imports.
 Remove unused imports.
-Do not leave unnecessary blank lines.
-Do not compress methods to reduce line count.
-Do not reformat unrelated files without a reason.
-Do not sacrifice readability to make code shorter.
-
-EXAMPLE:
-public AuthenticationResponse login(LoginRequest request) {
-    User user = userRepository.findByEmail(request.email())
-            .orElseThrow(() -> new AuthenticationException(
-                    ErrorCode.AUTH_INVALID_CREDENTIALS
-            ));
-    if (!passwordEncoder.matches(
-            request.password(),
-            user.getPasswordHash()
-    )) {
-        throw new AuthenticationException(
-                ErrorCode.AUTH_INVALID_CREDENTIALS
-        );
-    }
-    return authenticationMapper.toResponse(user);
-}
+Do not compress methods merely to reduce line count.
+Avoid unrelated formatting-only diffs.
+```
