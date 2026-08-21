@@ -2,12 +2,22 @@ spring:
   config:
     activate:
       on-profile: test
-  autoconfigure:
-    exclude:
-      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
-      - org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration
-      - org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration
-
+  datasource:
+    url: jdbc:h2:mem:sayarti;MODE=MSSQLServer;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: true
 sayarti:
   cors:
     allowed-origins: http://localhost
+  jwt:
+    access-secret: test-access-secret-that-is-at-least-thirty-two-bytes-long
+    refresh-secret: unused-test-refresh-secret-that-is-at-least-thirty-two-bytes
+    access-expiration: 900000
+    refresh-expiration: 2592000000
