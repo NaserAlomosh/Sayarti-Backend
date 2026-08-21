@@ -637,7 +637,7 @@ Any required Google credential must be documented in `SECRETS_SETUP.md`.
 The mobile application obtains a Google ID token using the `openid`, `email`, and
 `profile` scopes and sends only that token to `POST /api/v1/auth/google` as
 `{"idToken":"<google-id-token>"}`. The backend verifies Google's signature plus the
-Google issuer, `GOOGLE_CLIENT_ID` audience, and expiration, and requires a subject and
+issuer, `GOOGLE_CLIENT_ID` audience, and expiration, and requires a subject and
 verified email. Names and email are read exclusively from verified token claims. A
 new Google account is created on first login; later logins resolve the stored Google
 subject and issue the normal Sayarti access/refresh token response. Google ID tokens
