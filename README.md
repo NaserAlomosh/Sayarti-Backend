@@ -70,20 +70,19 @@ Microsoft SQL Server is used for application persistence and database-backed int
 Codex must follow these rules during development:
 
 1. Read this entire README before implementing features.
-2. Read `AGENTS.md` before making code changes.
-3. Read `SECRETS_SETUP.md` before configuring external integrations.
-4. Work one logical feature at a time.
-5. Do not implement features outside the V1 scope.
-6. Do not mark partially implemented features as complete.
-7. Change `- [ ] Feature` to `- [x] Feature` only after the Definition of Done is satisfied.
-8. Every external key, secret, credential, certificate, client ID, token, or configuration value that cannot be generated locally must be documented in `SECRETS_SETUP.md`.
-9. Never commit actual secrets to Git.
-10. Never hardcode secrets in Java source files.
-11. Microsoft SQL Server is the only supported relational database engine.
-12. Do not introduce H2 for integration testing.
-13. Database-backed integration tests must use Microsoft SQL Server Testcontainers.
-14. Unit tests that do not require persistence must not start database containers.
-15. Never point automated tests at development or production databases.
+2. Read `SECRETS_SETUP.md` before configuring external integrations.
+3. Work one logical feature at a time.
+4. Do not implement features outside the V1 scope.
+5. Do not mark partially implemented features as complete.
+6. Change `- [ ] Feature` to `- [x] Feature` only after the Definition of Done is satisfied.
+7. Every external key, secret, credential, certificate, client ID, token, or configuration value that cannot be generated locally must be documented in `SECRETS_SETUP.md`.
+8. Never commit actual secrets to Git.
+9. Never hardcode secrets in Java source files.
+10. Microsoft SQL Server is the only supported relational database engine.
+11. Do not introduce H2 for integration testing.
+12. Database-backed integration tests must use Microsoft SQL Server Testcontainers.
+13. Unit tests that do not require persistence must not start database containers.
+14. Never point automated tests at development or production databases.
 
 ---
 
@@ -1229,6 +1228,12 @@ Handle errors.
 Add Swagger documentation.
 Add appropriate tests.
 Never hardcode secrets.
+Use consistent standard Java formatting.
+Keep code readable and properly indented.
+Do not generate compressed or minified-looking code.
+Format all Java files created or modified by the task before completion.
+Organize imports and remove unused imports.
+Avoid unrelated formatting changes that create noisy diffs.
 ```
 
 After implementation:
@@ -1242,6 +1247,10 @@ Do not mark build verification complete without BUILD SUCCESS.
 Update README checklist.
 Update SECRETS_SETUP.md if new owner configuration is required.
 Do not mark incomplete features complete.
+Format all files changed by the task.
+Review changed files for indentation, spacing, line wrapping, imports, and readability.
+Ensure no generated Java code is compressed or unnecessarily placed on a single line.
+Review the final Git diff for unnecessary formatting-only changes.
 ```
 
 ---
@@ -1260,3 +1269,51 @@ Easy to integrate with Flutter
 ```
 
 The priority is building a stable core product, not maximizing the number of features.
+
+### Code Formatting and Readability
+
+Codex must write clean, consistently formatted, production-readable code.
+
+Generated code must never be compressed, minified, or unnecessarily placed on a
+single line merely to reduce line count.
+
+Codex must preserve the existing project's formatting conventions and must format
+every file created or modified before completing a task.
+
+#### Java Formatting Rules
+
+```text
+Use 4 spaces for indentation.
+Do not use tabs for indentation.
+Keep one statement per line.
+Use spaces around operators and after commas.
+Use braces consistently for if, else, for, while, switch, and similar blocks.
+Separate logical sections inside methods with blank lines where useful.
+Avoid excessively long lines.
+Break long method calls into readable multiline blocks.
+Break long constructors and argument lists into readable multiline blocks.
+Break fluent and chained calls across multiple lines when necessary.
+Keep annotations readable.
+Organize imports.
+Remove unused imports.
+Do not leave unnecessary blank lines.
+Do not compress methods to reduce line count.
+Do not reformat unrelated files without a reason.
+Do not sacrifice readability to make code shorter.
+
+EXAMPLE:
+public AuthenticationResponse login(LoginRequest request) {
+    User user = userRepository.findByEmail(request.email())
+            .orElseThrow(() -> new AuthenticationException(
+                    ErrorCode.AUTH_INVALID_CREDENTIALS
+            ));
+    if (!passwordEncoder.matches(
+            request.password(),
+            user.getPasswordHash()
+    )) {
+        throw new AuthenticationException(
+                ErrorCode.AUTH_INVALID_CREDENTIALS
+        );
+    }
+    return authenticationMapper.toResponse(user);
+}
