@@ -31,8 +31,10 @@ sessions. The authentication schema is
 managed by Flyway and its HTTP contract is documented with OpenAPI. No vehicle or
 other V1 business feature has been implemented yet.
 
-Checklist items below remain unchecked where runtime verification still depends on
-downloading Maven artifacts, owner-provided configuration, SQL Server, or Docker.
+The foundation and authentication implementation and its automated tests have been
+verified locally. Checklist items below remain unchecked where completion still
+depends on owner-provided configuration, live external services, SQL Server-specific
+integration verification, Docker, or unimplemented V1 business features.
 
 ---
 
@@ -125,7 +127,7 @@ If any required part is missing, the feature stays unchecked.
 
 # 1. Initial Project Setup
 
-- [ ] **Initialize Spring Boot Project**
+- [x] **Initialize Spring Boot Project**
 
 Create the Spring Boot project using:
 
@@ -146,7 +148,7 @@ Main class:
 SayartiApplication
 ```
 
-- [ ] **Add Core Dependencies**
+- [x] **Add Core Dependencies**
 
 Required dependencies:
 
@@ -166,7 +168,7 @@ Spring Boot Test
 Testcontainers
 ```
 
-- [ ] **Configure Maven**
+- [x] **Configure Maven**
 
 Configure:
 
@@ -186,7 +188,7 @@ The following command must succeed:
 
 # 2. Application Configuration
 
-- [ ] **Create Application Configuration**
+- [x] **Create Application Configuration**
 
 Create:
 
@@ -197,7 +199,7 @@ src/main/resources/application-prod.yml
 src/test/resources/application-test.yml
 ```
 
-- [ ] **Configure Environment Variables**
+- [x] **Configure Environment Variables**
 
 Environment-specific and sensitive values must use environment variables.
 
@@ -263,7 +265,7 @@ read `.env` files by itself.
 
 # 3. Microsoft SQL Server
 
-- [ ] **Configure SQL Server Connection**
+- [x] **Configure SQL Server Connection**
 
 Use Microsoft SQL Server as the primary database.
 
@@ -281,7 +283,7 @@ Example JDBC URL:
 jdbc:sqlserver://${DB_HOST}:${DB_PORT};databaseName=${DB_NAME};encrypt=true;trustServerCertificate=true
 ```
 
-- [ ] **Add Microsoft SQL Server JDBC Driver**
+- [x] **Add Microsoft SQL Server JDBC Driver**
 
 Use:
 
@@ -289,7 +291,7 @@ Use:
 com.microsoft.sqlserver:mssql-jdbc
 ```
 
-- [ ] **Configure Hibernate**
+- [x] **Configure Hibernate**
 
 Use:
 
@@ -306,7 +308,7 @@ Never use `ddl-auto=update` as the database migration strategy.
 
 # 4. Flyway Database Migrations
 
-- [ ] **Configure Flyway**
+- [x] **Configure Flyway**
 
 Migration location:
 
@@ -326,8 +328,8 @@ V3__create_vehicles.sql
 
 Required tables:
 
-- [ ] `users`
-- [ ] `refresh_tokens`
+- [x] `users`
+- [x] `refresh_tokens`
 - [ ] `vehicles`
 - [ ] `fuel_records`
 - [ ] `maintenance_records`
@@ -341,7 +343,7 @@ All schema changes must be performed through Flyway migrations.
 
 # 5. Project Architecture
 
-- [ ] **Create Feature-Based Architecture**
+- [x] **Create Feature-Based Architecture**
 
 Target structure:
 
@@ -400,8 +402,8 @@ Do not use field injection with `@Autowired`.
 
 # 7. Common API Response
 
-- [ ] **Create Standard Success Response**
-- [ ] **Create Standard Error Response**
+- [x] **Create Standard Success Response**
+- [x] **Create Standard Error Response**
 - [ ] **Create Pagination Response**
 - [ ] **Create Sorting Support**
 - [ ] **Create Date Range Filtering**
@@ -432,7 +434,7 @@ Error example:
 
 # 8. Global Error Handling
 
-- [ ] **Create Global Exception Handler**
+- [x] **Create Global Exception Handler**
 
 Use `@RestControllerAdvice`.
 
@@ -448,7 +450,7 @@ Database Errors
 Unexpected Errors
 ```
 
-- [ ] **Create Error Code Enum**
+- [x] **Create Error Code Enum**
 
 Initial codes:
 
@@ -483,7 +485,7 @@ REMINDER_NOT_FOUND
 
 # 9. API Versioning
 
-- [ ] **Configure API Base Path**
+- [x] **Configure API Base Path**
 
 All V1 APIs must start with:
 
@@ -495,8 +497,8 @@ All V1 APIs must start with:
 
 # 10. Swagger / OpenAPI
 
-- [ ] **Configure Swagger**
-- [ ] **Document All APIs**
+- [x] **Configure Swagger**
+- [x] **Document All APIs**
 
 Swagger UI should be available in development at:
 
@@ -510,12 +512,12 @@ Each API must document description, authentication, parameters, body, success re
 
 # 11. Security Configuration
 
-- [ ] **Configure Spring Security**
-- [ ] **Configure Stateless Authentication**
-- [ ] **Configure Public Routes**
-- [ ] **Configure Password Encoder**
-- [ ] **Configure CORS**
-- [ ] **Configure Security Headers**
+- [x] **Configure Spring Security**
+- [x] **Configure Stateless Authentication**
+- [x] **Configure Public Routes**
+- [x] **Configure Password Encoder**
+- [x] **Configure CORS**
+- [x] **Configure Security Headers**
 
 Use:
 
@@ -536,12 +538,12 @@ Public routes:
 
 # 12. JWT Authentication
 
-- [ ] **Create JWT Service**
-- [ ] **Create JWT Authentication Filter**
-- [ ] **Configure Access Token Expiration**
-- [ ] **Configure Refresh Token Expiration**
-- [ ] **Create Refresh Token Storage**
-- [ ] **Implement Refresh Token Rotation**
+- [x] **Create JWT Service**
+- [x] **Create JWT Authentication Filter**
+- [x] **Configure Access Token Expiration**
+- [x] **Configure Refresh Token Expiration**
+- [x] **Create Refresh Token Storage**
+- [x] **Implement Refresh Token Rotation**
 
 JWT service must support:
 
@@ -572,7 +574,7 @@ Store refresh tokens securely, preferably hashed.
 
 # 13. User Authentication
 
-- [ ] **Register User**
+- [x] **Register User**
 
 ```http
 POST /api/v1/auth/register
@@ -590,7 +592,7 @@ Password Hashing
 DTO Validation
 ```
 
-- [ ] **Login With Email and Password**
+- [x] **Login With Email and Password**
 
 ```http
 POST /api/v1/auth/login
@@ -604,13 +606,13 @@ Refresh Token
 User Information
 ```
 
-- [ ] **Refresh Session**
+- [x] **Refresh Session**
 
 ```http
 POST /api/v1/auth/refresh
 ```
 
-- [ ] **Logout**
+- [x] **Logout**
 
 ```http
 POST /api/v1/auth/logout
@@ -622,10 +624,10 @@ Refresh token must be invalidated.
 
 # 14. Google OAuth 2.0
 
-- [ ] **Configure Google OAuth 2.0**
-- [ ] **Implement Google Login Flow**
-- [ ] **Verify Google Identity Token**
-- [ ] **Handle Existing Users / Account Linking**
+- [x] **Configure Google OAuth 2.0**
+- [x] **Implement Google Login Flow**
+- [x] **Verify Google Identity Token**
+- [x] **Handle Existing Users / Account Linking**
 
 Support Google authentication suitable for Android and iOS mobile applications.
 
@@ -678,8 +680,8 @@ LOCAL
 GOOGLE
 ```
 
-- [ ] **Create User Entity**
-- [ ] **Get Current User**
+- [x] **Create User Entity**
+- [x] **Get Current User**
 
 ```http
 GET /api/v1/users/me
@@ -1438,15 +1440,15 @@ Testcontainers
 
 ## Authentication Tests
 
-- [ ] Register User
-- [ ] Duplicate Email
-- [ ] Login
-- [ ] Invalid Credentials
-- [ ] JWT Validation
-- [ ] Refresh Token
-- [ ] Refresh Rotation
-- [ ] Logout
-- [ ] Google Authentication
+- [x] Register User
+- [x] Duplicate Email
+- [x] Login
+- [x] Invalid Credentials
+- [x] JWT Validation
+- [x] Refresh Token
+- [x] Refresh Rotation
+- [x] Logout
+- [x] Google Authentication
 
 ## Vehicle Tests
 
@@ -1497,9 +1499,9 @@ Testcontainers
 
 ## Security Tests
 
-- [ ] Unauthenticated Request
-- [ ] Invalid JWT
-- [ ] Expired JWT
+- [x] Unauthenticated Request
+- [x] Invalid JWT
+- [x] Expired JWT
 - [ ] Cross-User Vehicle Access
 - [ ] Cross-User Fuel Access
 - [ ] Cross-User Maintenance Access
@@ -1521,7 +1523,7 @@ Do not rely exclusively on H2.
 # 41. Final Build Verification
 
 - [ ] **Maven Build Passes**
-- [ ] **All Automated Tests Pass**
+- [x] **All Automated Tests Pass**
 - [ ] **Application Starts Using Development Profile**
 - [ ] **Application Starts Using Production Profile Configuration**
 - [ ] **Docker Build Passes**
@@ -1534,28 +1536,31 @@ Verification command:
 
 No production secrets may be committed.
 
-The repository currently contains unit/context tests for response serialization,
-validation and explicit exception mapping, protected/public security routes,
-security headers, and password encoding. SQL Server Testcontainers are available
-as a dependency for future database-specific integration tests; no database schema
-exists yet by design.
+The repository currently contains passing unit, context, and authentication
+integration tests for response serialization, validation and explicit exception
+mapping, protected/public security routes, JWT validation, password encoding,
+registration, login, refresh-token rotation, logout, current-user access, and Google
+authentication behavior. Flyway migrations provide the users, refresh-token, and
+Google-identity schema. SQL Server Testcontainers are available as a dependency for
+future database-specific integration tests, but SQL Server-specific integration
+verification is not complete.
 
 ---
 
 # V1 Main Feature Progress
 
-- [ ] Project Setup
+- [x] Project Setup
 - [ ] Microsoft SQL Server
 - [ ] Flyway
 - [ ] Common API Infrastructure
-- [ ] Global Error Handling
-- [ ] Spring Security
-- [ ] JWT Authentication
-- [ ] Registration
-- [ ] Email / Password Login
-- [ ] Refresh Tokens
-- [ ] Logout
-- [ ] Google Authentication
+- [x] Global Error Handling
+- [x] Spring Security
+- [x] JWT Authentication
+- [x] Registration
+- [x] Email / Password Login
+- [x] Refresh Tokens
+- [x] Logout
+- [x] Google Authentication
 - [ ] User Profile
 - [ ] Vehicle Management
 - [ ] Vehicle Ownership Security
@@ -1571,7 +1576,7 @@ exists yet by design.
 - [ ] True Vehicle Cost
 - [ ] Dashboard
 - [ ] Recent Activity
-- [ ] Swagger
+- [x] Swagger
 - [ ] Testing
 - [ ] Docker
 - [ ] Production Verification
