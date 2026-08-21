@@ -47,9 +47,6 @@ Local verification has completed successfully with:
 
 ```text
 ./mvnw clean verify
-The full Maven verification has completed successfully. The SQL Server-backed test
-suite started its Testcontainer, applied Flyway migrations, validated the Hibernate
-schema, and Maven reported `BUILD SUCCESS` with all tests passing.
 
 BUILD SUCCESS
 Tests run: 17
@@ -73,7 +70,6 @@ Docker / Testcontainers
 No Vehicle, Fuel, Maintenance, Expense, Reminder, Statistics, Dashboard, or other V1 vehicle-domain feature has been implemented yet.
 
 Email verification for LOCAL accounts is now part of the V1 scope and must be implemented before Vehicle Management begins.
-Checklist items below remain unchecked where completion still depends on owner-provided configuration, live external services, unfinished Docker Compose configuration, production verification, or unimplemented V1 business features.
 
 ---
 
@@ -118,20 +114,7 @@ Codex must follow these rules during development:
 4. Work one logical feature at a time.
 5. Do not implement features outside the V1 scope.
 6. Do not mark partially implemented features as complete.
-7. Change:
-
-```md
-- [ ] Feature
-```
-
-to:
-
-```md
-- [x] Feature
-```
-
-only after the Definition of Done is satisfied.
-
+7. Change `- [ ] Feature` to `- [x] Feature` only after the Definition of Done is satisfied.
 8. Every external key, secret, credential, certificate, client ID, token, email-provider credential, or configuration value that cannot be generated locally must be documented in `SECRETS_SETUP.md`.
 9. Never commit actual secrets to Git.
 10. Never hardcode secrets in Java source files.
@@ -174,8 +157,6 @@ Build Verification
 
 If any required part is missing, the feature stays unchecked.
 
-External integrations also require real configuration and verification before being marked complete where applicable.
-
 ---
 
 # 1. Initial Project Setup
@@ -184,36 +165,6 @@ External integrations also require real configuration and verification before be
 - [x] **Add Core Dependencies**
 - [x] **Configure Maven**
 
-```text
-Spring Web
-Spring Security
-Spring Data JPA
-Validation
-Microsoft SQL Server JDBC Driver
-Flyway Core
-Flyway SQL Server
-Lombok
-OpenAPI / Swagger
-JWT
-OAuth2 Client
-Firebase Admin SDK
-Spring Boot Test
-Spring Boot Testcontainers
-Testcontainers JUnit Jupiter
-Testcontainers Microsoft SQL Server
-```
-
-- [x] **Configure Maven**
-
-Configure:
-
-```text
-Java 17
-UTF-8
-Spring Boot Maven Plugin
-```
-
-The following command must succeed before this item is considered complete:
 Verified with:
 
 ```bash
@@ -258,8 +209,6 @@ EMAIL_OTP_EXPIRATION_SECONDS=300
 EMAIL_OTP_RESEND_COOLDOWN_SECONDS=60
 EMAIL_OTP_MAX_ATTEMPTS=5
 ```
-
-When an email provider is selected, add its required environment-variable names without committing real values.
 
 ---
 
@@ -392,7 +341,7 @@ EXPENSE_NOT_FOUND
 REMINDER_NOT_FOUND
 ```
 
-OTP-related error codes remain planned until Email Verification is implemented.
+OTP-related codes remain planned until Email Verification is implemented.
 
 ---
 
@@ -400,11 +349,7 @@ OTP-related error codes remain planned until Email Verification is implemented.
 
 - [x] **Configure API Base Path**
 
-All V1 APIs start with:
-
-```text
-/api/v1
-```
+All V1 APIs start with `/api/v1`.
 
 ---
 
@@ -447,23 +392,9 @@ Swagger UI:
 
 ## Registration
 
-- [x] **Register LOCAL User**
+- [x] **Register LOCAL User** — `POST /api/v1/auth/register`
 
-Endpoint:
-
-```http
-POST /api/v1/auth/register
-```
-
-Current registration validates:
-
-- First name.
-- Last name.
-- Email.
-- Unique email.
-- Password.
-- Password hashing.
-- DTO validation.
+Current registration validates first name, last name, unique email, password, password hashing, and DTO validation.
 
 After Email Verification is implemented, LOCAL registration becomes:
 
@@ -477,35 +408,17 @@ Register
 
 ## Login
 
-- [x] **Login With Email and Password**
+- [x] **Login With Email and Password** — `POST /api/v1/auth/login`
 
-Endpoint:
-
-```http
-POST /api/v1/auth/login
-```
-
-After Email Verification is implemented, unverified LOCAL accounts must be rejected with:
-
-```text
-AUTH_EMAIL_NOT_VERIFIED
-```
+After Email Verification is implemented, unverified LOCAL accounts must return `AUTH_EMAIL_NOT_VERIFIED` and must not receive access or refresh tokens.
 
 ## Refresh
 
-- [x] **Refresh Session**
-
-```http
-POST /api/v1/auth/refresh
-```
+- [x] **Refresh Session** — `POST /api/v1/auth/refresh`
 
 ## Logout
 
-- [x] **Logout**
-
-```http
-POST /api/v1/auth/logout
-```
+- [x] **Logout** — `POST /api/v1/auth/logout`
 
 ---
 
@@ -513,7 +426,7 @@ POST /api/v1/auth/logout
 
 Email Verification is required for LOCAL email/password registration before Vehicle Management begins.
 
-Google users whose Google ID token contains a verified email do not require Sayarti OTP verification.
+Verified Google users do not require Sayarti OTP verification.
 
 ## Target Registration Flow
 
@@ -540,12 +453,6 @@ Issue Sayarti access + refresh tokens
 
 - [ ] **Add Email Verification State to User**
 
-Add:
-
-```text
-emailVerified
-```
-
 Rules:
 
 ```text
@@ -565,13 +472,7 @@ expiresAt
 attemptCount
 verifiedAt
 createdAt
-```
-
-Optional fields:
-
-```text
 invalidatedAt
-lastAttemptAt
 ```
 
 Requirements:
@@ -590,47 +491,23 @@ Requirements:
 - Cryptographically secure 6-digit numeric OTP.
 - Hash before persistence.
 - Never log OTP in production.
-- Keep generation separate from delivery.
+- Default expiration: 5 minutes.
+- Maximum attempts: 5.
+- Resend cooldown: 60 seconds.
 
-Recommended config:
-
-```text
-OTP Length: 6 digits
-OTP Expiration: 5 minutes
-Maximum Attempts: 5
-Resend Cooldown: 60 seconds
-```
-
-Suggested properties:
+Suggested configuration:
 
 ```text
-EMAIL_OTP_EXPIRATION_SECONDS
-EMAIL_OTP_MAX_ATTEMPTS
-EMAIL_OTP_RESEND_COOLDOWN_SECONDS
+EMAIL_OTP_EXPIRATION_SECONDS=300
+EMAIL_OTP_MAX_ATTEMPTS=5
+EMAIL_OTP_RESEND_COOLDOWN_SECONDS=60
 ```
 
 - [ ] **Create Email Delivery Abstraction**
 
-Create an abstraction such as:
+Create an abstraction such as `EmailService`. Authentication logic must not depend directly on SMTP, Resend, SendGrid, SES, or another provider.
 
-```text
-EmailService
-```
-
-Authentication logic must not depend directly on a provider.
-
-Possible providers later:
-
-```text
-SMTP
-Resend
-SendGrid
-AWS SES
-```
-
-Do not select or hardcode a provider silently.
-
-When a provider is implemented, update `SECRETS_SETUP.md` with exact credential instructions.
+Any required provider credentials must be documented in `SECRETS_SETUP.md`.
 
 - [ ] **Modify LOCAL Registration to Start Email Verification**
 
@@ -640,7 +517,7 @@ After creating a LOCAL user:
 2. Generate OTP.
 3. Store only OTP hash.
 4. Send verification email.
-5. Do not issue normal access/refresh tokens before successful verification.
+5. Do not issue normal access/refresh tokens before verification.
 
 - [ ] **Verify Email OTP**
 
@@ -667,7 +544,7 @@ Find eligible LOCAL user
 → Check expiration
 → Check attempt limit
 → Verify OTP hash
-→ Mark verification record used
+→ Mark OTP used
 → Mark user emailVerified = true
 → Issue access token
 → Issue refresh token
@@ -685,60 +562,16 @@ POST /api/v1/auth/resend-verification
 Requirements:
 
 - Resend cooldown.
-- Rate limiting.
-- Invalidate previous active OTP.
-- Generate a new OTP.
-- Store only hash.
-- Send new email.
-- Avoid multiple valid OTPs.
-- Avoid unnecessary account enumeration.
+- Server-side rate limiting.
+- Previous OTP invalidation.
+- Single-active-OTP policy.
+- No account-enumeration leakage where avoidable.
 
 - [ ] **Block Unverified LOCAL Login**
-
-If:
-
-```text
-emailVerified = false
-```
-
-then login must not issue tokens.
-
-Return:
-
-```text
-AUTH_EMAIL_NOT_VERIFIED
-```
-
 - [ ] **Protect Refresh Flow for Unverified LOCAL Accounts**
-
-Unverified LOCAL accounts must not gain access through refresh behavior.
-
 - [ ] **Handle Verified Google Users**
-
-Verified Google identities must have:
-
-```text
-emailVerified = true
-```
-
-and must not require Sayarti OTP.
-
 - [ ] **Prevent OTP Abuse**
-
-Implement:
-
-- Attempt limit.
-- Resend cooldown.
-- Endpoint rate limiting.
-- OTP expiration.
-- Single active OTP policy.
-- No plaintext persistence.
-- No OTP logging.
-- Safe errors.
-
 - [ ] **Email Verification Swagger Documentation**
-
-Document registration verification behavior, verify endpoint, resend endpoint, OTP errors, and resend/rate-limit behavior.
 
 - [ ] **Email Verification Tests**
 
@@ -763,19 +596,7 @@ Required coverage:
 - [ ] Database-backed tests use Microsoft SQL Server Testcontainers.
 - [ ] Pure OTP unit tests do not start Testcontainers unless persistence is required.
 
-Email Verification is complete only when:
-
-```bash
-./mvnw clean verify
-```
-
-returns:
-
-```text
-BUILD SUCCESS
-```
-
-and the selected email provider has been verified where provider integration is part of the task.
+Email Verification is complete only when `./mvnw clean verify` returns `BUILD SUCCESS` and any real email-provider integration included in the task has been genuinely verified.
 
 ---
 
@@ -792,22 +613,9 @@ Endpoint:
 POST /api/v1/auth/google
 ```
 
-The backend verifies:
+The backend verifies Google signature, issuer, `GOOGLE_CLIENT_ID`, expiration, subject, and verified email.
 
-- Google signature.
-- Issuer.
-- `GOOGLE_CLIENT_ID`.
-- Expiration.
-- Subject.
-- Verified email.
-
-Automatic linking to an existing LOCAL account with the same verified email is forbidden.
-
-Return:
-
-```text
-409 AUTH_ACCOUNT_LINKING_REQUIRED
-```
+Automatic linking to an existing LOCAL account with the same verified email is forbidden and returns `409 AUTH_ACCOUNT_LINKING_REQUIRED`.
 
 No `GOOGLE_CLIENT_SECRET` is required for the current ID-token verification flow.
 
@@ -820,27 +628,9 @@ No `GOOGLE_CLIENT_SECRET` is required for the current ID-token verification flow
 - [x] **Update Current User** — `PATCH /api/v1/users/me`
 - [x] **Delete Account** — `DELETE /api/v1/users/me`
 
-Profile updates accept only `firstName` and `lastName`; identity, provider, credential,
-token, and internal security fields cannot be edited or exposed through this API.
-Account deletion uses the existing `deleted_at` soft-deletion strategy, revokes every
-active refresh token for the account, and causes existing access tokens to be rejected
-because authentication resolves only non-deleted users. A deleted account cannot log
-in or refresh a session.
-- [x] **Get Current User**
-- [x] **Update Current User**
-- [x] **Delete Account**
+Profile updates accept only `firstName` and `lastName`.
 
-Endpoints:
-
-```http
-GET /api/v1/users/me
-PATCH /api/v1/users/me
-DELETE /api/v1/users/me
-```
-
-Only safe profile fields may be edited.
-
-Account deletion revokes active refresh tokens and prevents future authentication.
+Account deletion uses the existing soft-delete strategy, revokes active refresh tokens, and prevents the deleted account from authenticating.
 
 ---
 
@@ -1117,10 +907,10 @@ api.version=1.44
 - [x] Update First Name
 - [x] Update Last Name
 - [x] Profile Validation
-- [x] Protected Field Update Prevention
+- [x] Protected Fields Not Writable
 - [x] Delete Account
-- [x] Revoke Deleted Account Sessions
-- [x] Reject Deleted Account Login and Refresh
+- [x] Refresh Tokens Revoked After Deletion
+- [x] Deleted User Cannot Authenticate
 
 ## Email Verification Tests
 
@@ -1138,18 +928,6 @@ api.version=1.44
 - [ ] Verified LOCAL Login
 - [ ] Unverified Refresh Access Blocked
 - [ ] Verified Google Account Bypasses OTP
-
-## User Profile Tests
-
-- [x] Get Current User
-- [x] Unauthenticated Profile Access
-- [x] Update First Name
-- [x] Update Last Name
-- [x] Profile Validation
-- [x] Protected Fields Not Writable
-- [x] Delete Account
-- [x] Refresh Tokens Revoked After Deletion
-- [x] Deleted User Cannot Authenticate
 
 ## Vehicle Tests
 
@@ -1220,11 +998,6 @@ api.version=1.44
 - [x] Remove H2 Test Database
 - [x] Verify Docker Connectivity
 - [x] Verify Existing SQL Server Integration Test Suite
-- [x] **Configure Microsoft SQL Server Testcontainer**
-- [x] **Configure Spring Boot Testcontainers Integration**
-- [x] **Remove H2 Test Database**
-- [x] **Verify Docker Connectivity**
-- [x] **Verify Complete SQL Server Integration Test Suite**
 
 Current verified baseline:
 
@@ -1249,14 +1022,6 @@ Future DB-backed feature tests must continue using the shared SQL Server Testcon
 - [ ] Application Starts Using Production Profile Configuration
 - [ ] Docker Compose Stack Verified
 - [ ] Production Verification
-- [x] **Maven Build Passes**
-- [x] **All Automated Tests Pass**
-- [x] **SQL Server Integration Tests Pass**
-- [ ] **Application Starts Using Development Profile**
-- [ ] **Application Starts Using Production Profile Configuration**
-- [ ] **Docker Build Passes**
-- [x] **Local Docker Environment Verified**
-- [x] **Testcontainers Docker Connectivity Verified**
 
 Every new feature must rerun:
 
@@ -1274,9 +1039,6 @@ before its own checklist items are marked complete.
 - [x] Microsoft SQL Server
 - [x] Flyway Infrastructure
 - [x] Common API Infrastructure
-- [x] Microsoft SQL Server
-- [ ] Flyway
-- [ ] Common API Infrastructure
 - [x] Global Error Handling
 - [x] Spring Security
 - [x] JWT Authentication
@@ -1340,19 +1102,8 @@ Whenever Codex encounters implementation requiring project-owner input such as a
 3. Never add fake production values.
 4. Never hardcode real secrets.
 5. Add the missing requirement to `SECRETS_SETUP.md`.
-6. Document:
-   - Exact name.
-   - Purpose.
-   - Required/optional status.
-   - Environment-variable name.
-   - Where to obtain it.
-   - Exact setup steps.
-   - Where to configure it.
-   - What depends on it.
-   - How to verify it.
+6. Document the exact name, purpose, required/optional status, environment variable name, where to obtain it, setup steps, configuration location, dependencies, and verification method.
 7. Leave external-integration verification unchecked until it has actually been verified.
-
-For Email Verification specifically, once the email provider is selected, `SECRETS_SETUP.md` must document exactly where the project owner obtains the required email credentials and where they are configured.
 
 ---
 
@@ -1390,8 +1141,6 @@ Never hardcode secrets.
 Use the existing UTC timestamp strategy.
 Keep Java and SQL Server types consistent.
 Use consistent standard Java formatting.
-Keep code readable and properly indented.
-Do not generate compressed or minified-looking code.
 Organize imports.
 Remove unused imports.
 Avoid unrelated changes.
@@ -1407,7 +1156,6 @@ Fix all failures.
 Do not mark build verification complete without BUILD SUCCESS.
 Update README.md only for truly completed items.
 Update SECRETS_SETUP.md if new owner configuration is required.
-Do not mark external integration complete without real verification where applicable.
 Do not start the next feature.
 Review the final diff for correctness and unnecessary changes.
 ```
@@ -1433,15 +1181,12 @@ The priority is building a stable core product, not maximizing the number of fea
 
 Codex must write clean, consistently formatted, production-readable Java.
 
-Rules:
-
 ```text
 Use 4 spaces for indentation.
 Do not use tabs for indentation.
 Keep one statement per line.
 Use spaces around operators and after commas.
 Use braces consistently.
-Separate logical method sections where useful.
 Avoid excessively long lines.
 Break long method calls and argument lists into readable multiline blocks.
 Organize imports.
@@ -1449,20 +1194,3 @@ Remove unused imports.
 Do not compress methods merely to reduce line count.
 Avoid unrelated formatting-only diffs.
 ```
-
-EXAMPLE:
-public AuthenticationResponse login(LoginRequest request) {
-    User user = userRepository.findByEmail(request.email())
-            .orElseThrow(() -> new AuthenticationException(
-                    ErrorCode.AUTH_INVALID_CREDENTIALS
-            ));
-    if (!passwordEncoder.matches(
-            request.password(),
-            user.getPasswordHash()
-    )) {
-        throw new AuthenticationException(
-                ErrorCode.AUTH_INVALID_CREDENTIALS
-        );
-    }
-    return authenticationMapper.toResponse(user);
-}
