@@ -703,7 +703,57 @@ Potential owner-provided configuration for V1:
 - [ ] Production allowed origins
 - [ ] Production database credentials
 - [ ] Production deployment configuration
+- [ ] Transactional email provider credentials and sender identity
 
 Not every item must be available on day one.
 
 Codex should implement everything safely possible without missing credentials and leave clear instructions here for anything the project owner must provide.
+
+---
+
+# 18. Transactional Email Provider
+
+## Status
+
+- [ ] Required from project owner
+- [ ] Real email delivery configured and verified
+
+## Required For
+
+Delivering the six-digit LOCAL-account email verification OTP. The backend contains
+a provider-neutral `EmailService` boundary and the complete verification flow, but no
+real provider is selected or configured. The current fallback deliberately does not
+send or log OTP plaintext and must not be treated as working delivery.
+
+## Values To Provide
+
+Choose a transactional provider (for example SMTP, Resend, SendGrid, or AWS SES) and
+provide its API key or SMTP credentials plus a verified sender address/domain. Exact
+environment variable names should be added when the provider is selected; provider
+credentials must not be committed or placed in the Flutter application.
+
+## Where To Get Them
+
+1. Create or select the provider account.
+2. Verify a sending domain or sender address using the provider's DNS/email steps.
+3. Create a restricted sending API key or SMTP credential in the provider console.
+4. Copy the credential once into the deployment platform's secret manager or local
+   uncommitted `.env` file.
+
+## Where It Goes
+
+Add a provider-specific implementation of
+`src/main/java/com/sayarti/backend/email/EmailService.java`, load credentials through
+Spring configuration backed by environment variables, and activate that implementation
+instead of `UnconfiguredEmailService`. Do not pass the credential into authentication
+services; they depend only on `EmailService`.
+
+## Verification
+
+1. Register a LOCAL account using an inbox controlled for testing.
+2. Confirm exactly one message arrives and contains the six-digit code.
+3. Submit it to `POST /api/v1/auth/verify-email` within five minutes.
+4. Confirm the endpoint returns access and refresh tokens and the same code cannot be
+   reused.
+5. Test resend after the cooldown and confirm only the newest code works.
+6. Only then change the real-delivery status above to provided and verified.

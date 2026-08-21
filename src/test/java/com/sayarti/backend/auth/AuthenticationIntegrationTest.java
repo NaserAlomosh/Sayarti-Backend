@@ -82,13 +82,16 @@ class AuthenticationIntegrationTest extends AbstractIntegrationTest {
     void registersAndHashesPassword() throws Exception {
         JsonNode response = register("Sara@Example.com");
 
-        assertThat(response.at("/data/user/email").asText()).isEqualTo("sara@example.com");
+        assertThat(response.at("/data/email").asText()).isEqualTo("sara@example.com");
+        assertThat(response.at("/data/verificationRequired").asBoolean()).isTrue();
+        assertThat(response.at("/data/accessToken").isMissingNode()).isTrue();
 
         var user = users.findByEmailIgnoreCaseAndDeletedAtIsNull("sara@example.com").orElseThrow();
 
         assertThat(user.getPasswordHash()).doesNotContain("StrongPass1");
 
         assertThat(encoder.matches("StrongPass1", user.getPasswordHash())).isTrue();
+        assertThat(user.isEmailVerified()).isFalse();
     }
 
     @Test
@@ -147,6 +150,19 @@ class AuthenticationIntegrationTest extends AbstractIntegrationTest {
     @Test
     void logsInAndRejectsBadCredentials() throws Exception {
         register("login@example.com");
+
+        mvc.perform(post("/api/v1/auth/login").contentType(MediaType.APPLICATION_JSON).content("""
+                        {
+                          "email": "login@example.com",
+                          "password": "StrongPass1"
+                        }
+                        """))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.error.code").value("AUTH_EMAIL_NOT_VERIFIED"));
+
+        User user = users.findByEmailIgnoreCaseAndDeletedAtIsNull("login@example.com").orElseThrow();
+        user.verifyEmail();
+        users.saveAndFlush(user);
 
         mvc.perform(post("/api/v1/auth/login").contentType(MediaType.APPLICATION_JSON).content("""
                         {

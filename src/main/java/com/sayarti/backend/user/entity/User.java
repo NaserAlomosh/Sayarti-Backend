@@ -30,6 +30,8 @@ public class User {
     @Enumerated(EnumType.STRING)
     @Column(name = "auth_provider", nullable = false, length = 20)
     private AuthProvider authProvider;
+    @Column(name = "email_verified", nullable = false)
+    private boolean emailVerified;
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
     @Column(name = "updated_at", nullable = false)
@@ -46,6 +48,7 @@ public class User {
         this.email = email;
         this.passwordHash = passwordHash;
         this.authProvider = AuthProvider.LOCAL;
+        this.emailVerified = false;
         this.createdAt = Instant.now();
         this.updatedAt = this.createdAt;
     }
@@ -59,6 +62,7 @@ public class User {
         user.email = email;
         user.googleSubject = googleSubject;
         user.authProvider = AuthProvider.GOOGLE;
+        user.emailVerified = true;
         user.createdAt = Instant.now();
         user.updatedAt = user.createdAt;
         return user;
@@ -102,6 +106,13 @@ public class User {
 
     public Instant getDeletedAt() {
         return deletedAt;
+    }
+
+    public boolean isEmailVerified() { return emailVerified; }
+
+    public void verifyEmail() {
+        this.emailVerified = true;
+        this.updatedAt = Instant.now();
     }
 
     public void updateProfile(String firstName, String lastName) {

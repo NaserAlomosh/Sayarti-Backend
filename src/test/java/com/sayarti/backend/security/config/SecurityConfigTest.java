@@ -7,6 +7,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.sayarti.backend.SayartiApplication;
 import com.sayarti.backend.auth.repository.RefreshTokenRepository;
+import com.sayarti.backend.auth.repository.EmailVerificationOtpRepository;
 import com.sayarti.backend.user.repository.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,6 +42,9 @@ class SecurityConfigTest {
 
     @MockitoBean
     private RefreshTokenRepository refreshTokenRepository;
+
+    @MockitoBean
+    private EmailVerificationOtpRepository emailVerificationOtpRepository;
 
     @Test
     void protectsNonPublicRoutesWithStandardError() throws Exception {

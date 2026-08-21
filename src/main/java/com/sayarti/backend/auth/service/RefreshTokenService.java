@@ -6,6 +6,7 @@ import com.sayarti.backend.common.exception.ApiException;
 import com.sayarti.backend.common.exception.ErrorCode;
 import com.sayarti.backend.security.jwt.JwtProperties;
 import com.sayarti.backend.user.entity.User;
+import com.sayarti.backend.user.entity.AuthProvider;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -46,6 +47,11 @@ public class RefreshTokenService {
         if (!old.getExpiresAt().isAfter(Instant.now())) {
             old.revoke(null);
             throw error(ErrorCode.AUTH_INVALID_REFRESH_TOKEN, "Refresh token has expired");
+        }
+        if (old.getUser().getAuthProvider() == AuthProvider.LOCAL
+                && !old.getUser().isEmailVerified()) {
+            throw new ApiException(ErrorCode.AUTH_EMAIL_NOT_VERIFIED, HttpStatus.FORBIDDEN,
+                    "Email verification is required");
         }
         IssuedToken next = issue(old.getUser());
         old.revoke(next.entity().getId());

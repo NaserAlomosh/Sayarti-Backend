@@ -4,7 +4,11 @@ import com.sayarti.backend.auth.dto.AuthResponse;
 import com.sayarti.backend.auth.dto.GoogleLoginRequest;
 import com.sayarti.backend.auth.dto.LoginRequest;
 import com.sayarti.backend.auth.dto.RefreshRequest;
+import com.sayarti.backend.auth.dto.RegistrationResponse;
+import com.sayarti.backend.auth.dto.ResendVerificationRequest;
+import com.sayarti.backend.auth.dto.ResendVerificationResponse;
 import com.sayarti.backend.auth.dto.RegisterRequest;
+import com.sayarti.backend.auth.dto.VerifyEmailRequest;
 import com.sayarti.backend.common.exception.ApiException;
 import com.sayarti.backend.common.exception.ErrorCode;
 import com.sayarti.backend.security.jwt.JwtService;
@@ -28,16 +32,19 @@ public class AuthService {
     private final JwtService jwt;
     private final RefreshTokenService refreshTokens;
     private final GoogleTokenVerifier googleTokens;
+    private final EmailVerificationService emailVerification;
     public AuthService(UserRepository users, PasswordEncoder encoder, JwtService jwt,
-            RefreshTokenService refreshTokens, GoogleTokenVerifier googleTokens) {
+            RefreshTokenService refreshTokens, GoogleTokenVerifier googleTokens,
+            EmailVerificationService emailVerification) {
         this.users = users;
         this.encoder = encoder;
         this.jwt = jwt;
         this.refreshTokens = refreshTokens;
         this.googleTokens = googleTokens;
+        this.emailVerification = emailVerification;
     }
     @Transactional
-    public AuthResponse register(RegisterRequest r) {
+    public RegistrationResponse register(RegisterRequest r) {
         String email = normalize(r.email());
         if (users.existsByEmailIgnoreCase(email)) {
             throw conflict();
@@ -49,7 +56,8 @@ public class AuthService {
         } catch (DataIntegrityViolationException e) {
             throw conflict();
         }
-        return tokens(user);
+        emailVerification.start(user);
+        return new RegistrationResponse(user.getEmail(), true);
     }
     @Transactional
     public AuthResponse login(LoginRequest r) {
@@ -59,7 +67,30 @@ public class AuthService {
                 || !encoder.matches(r.password(), user.getPasswordHash())) {
             throw invalidCredentials();
         }
+        requireVerified(user);
         return tokens(user);
+    }
+
+    @Transactional(noRollbackFor = ApiException.class)
+    public AuthResponse verifyEmail(VerifyEmailRequest request) {
+        User user = eligibleLocal(request.email());
+        if (user.isEmailVerified()) {
+            throw new ApiException(ErrorCode.AUTH_EMAIL_ALREADY_VERIFIED, HttpStatus.CONFLICT,
+                    "Email is already verified");
+        }
+        emailVerification.verify(user, request.otp());
+        return tokens(user);
+    }
+
+    @Transactional
+    public ResendVerificationResponse resendVerification(ResendVerificationRequest request) {
+        User user = users.findByEmailIgnoreCaseAndDeletedAtIsNull(normalize(request.email()))
+                .orElse(null);
+        if (user == null || user.getAuthProvider() != AuthProvider.LOCAL || user.isEmailVerified()) {
+            return new ResendVerificationResponse(true);
+        }
+        emailVerification.resend(user);
+        return new ResendVerificationResponse(true);
     }
     @Transactional
     public AuthResponse google(GoogleLoginRequest request) {
@@ -101,6 +132,24 @@ public class AuthService {
 
     private AuthResponse tokens(User user) {
         return response(user, refreshTokens.issue(user).raw());
+    }
+
+    private User eligibleLocal(String email) {
+        User user = users.findByEmailIgnoreCaseAndDeletedAtIsNull(normalize(email))
+                .orElseThrow(() -> new ApiException(ErrorCode.AUTH_OTP_INVALID,
+                        HttpStatus.BAD_REQUEST, "Verification code is invalid"));
+        if (user.getAuthProvider() != AuthProvider.LOCAL) {
+            throw new ApiException(ErrorCode.AUTH_OTP_INVALID, HttpStatus.BAD_REQUEST,
+                    "Verification code is invalid");
+        }
+        return user;
+    }
+
+    private void requireVerified(User user) {
+        if (user.getAuthProvider() == AuthProvider.LOCAL && !user.isEmailVerified()) {
+            throw new ApiException(ErrorCode.AUTH_EMAIL_NOT_VERIFIED, HttpStatus.FORBIDDEN,
+                    "Email verification is required");
+        }
     }
 
     private AuthResponse response(User u, String refresh) {
