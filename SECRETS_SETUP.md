@@ -60,7 +60,6 @@ JWT_ACCESS_EXPIRATION=
 JWT_REFRESH_EXPIRATION=
 
 GOOGLE_CLIENT_ID=
-GOOGLE_CLIENT_SECRET=
 
 FIREBASE_PROJECT_ID=
 FIREBASE_CLIENT_EMAIL=
@@ -313,9 +312,9 @@ Google Auth Platform
 → Create OAuth Client
 ```
 
-For a mobile flow where the backend verifies an ID token, a Web Application client ID is commonly used as the backend audience/server client ID.
-
-Codex must confirm the actual implemented flow before finalizing the configuration.
+For Sayarti's implemented mobile ID-token flow, create a Web Application OAuth
+client. Its client ID is the backend audience/server client ID that Android and iOS
+request when obtaining the Google ID token.
 
 ## What To Copy
 
@@ -326,6 +325,12 @@ Copy the generated OAuth **Client ID**.
 ```env
 GOOGLE_CLIENT_ID=<client-id>
 ```
+
+## Backend Usage
+
+The backend loads this as `sayarti.google.client-id` and accepts it as the sole token
+audience. Startup fails when it is absent or blank, preventing accidental token
+verification without audience validation.
 
 ## Verification
 
@@ -341,18 +346,11 @@ A token intended for another application must not be accepted when audience vali
 
 ---
 
-# 8. Google Client Secret
+# 8. Google Client Secret (Not Required)
 
 ## Status
 
-- [ ] Determine whether this secret is required by the selected flow
-- [ ] Required from project owner only if the backend flow needs it
-
-## Environment Variable
-
-```env
-GOOGLE_CLIENT_SECRET=
-```
+- [x] Confirmed not required for the implemented flow
 
 ## Important
 
@@ -362,20 +360,9 @@ If Flutter obtains a Google ID token and Spring Boot only verifies that token, t
 
 If the backend performs an OAuth authorization-code exchange, a client secret may be required.
 
-Codex must document the exact flow and only require this value when necessary.
-
-## Where To Get It
-
-If required:
-
-```text
-Google Cloud Console
-→ Google Auth Platform
-→ Clients
-→ Select the relevant OAuth client
-```
-
-Copy the client secret.
+Sayarti implements the ID-token verification flow: Flutter obtains an ID token and
+the backend verifies it. There is no authorization-code exchange, so no client secret
+is loaded, included in `.env.example`, or required from the project owner.
 
 ## Security
 
@@ -708,7 +695,6 @@ Potential owner-provided configuration for V1:
 - [ ] JWT refresh secret
 - [ ] Google Cloud project
 - [ ] Google OAuth client ID
-- [ ] Google client secret only if required by the selected flow
 - [ ] Android Google OAuth configuration
 - [ ] iOS Google OAuth configuration
 - [ ] Firebase project

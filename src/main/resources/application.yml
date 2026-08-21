@@ -45,7 +45,6 @@ sayarti:
     refresh-expiration: ${JWT_REFRESH_EXPIRATION:2592000000}
   google:
     client-id: ${GOOGLE_CLIENT_ID:}
-    client-secret: ${GOOGLE_CLIENT_SECRET:}
   firebase:
     project-id: ${FIREBASE_PROJECT_ID:}
     client-email: ${FIREBASE_CLIENT_EMAIL:}

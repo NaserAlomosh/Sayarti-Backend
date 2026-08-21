@@ -25,7 +25,9 @@ Status: In Development
 
 The Java 17 Maven/Spring Boot foundation now includes local email/password
 authentication, hashed passwords, JWT access authentication, rotating hashed
-refresh tokens, logout, and current-user resolution. The authentication schema is
+refresh tokens, logout, current-user resolution, and backend-verified Google ID-token
+authentication. Google sessions use the same JWT and refresh-token rotation as local
+sessions. The authentication schema is
 managed by Flyway and its HTTP contract is documented with OpenAPI. No vehicle or
 other V1 business feature has been implemented yet.
 
@@ -214,7 +216,6 @@ JWT_ACCESS_EXPIRATION
 JWT_REFRESH_EXPIRATION
 
 GOOGLE_CLIENT_ID
-GOOGLE_CLIENT_SECRET
 
 FIREBASE_PROJECT_ID
 FIREBASE_CLIENT_EMAIL
@@ -245,7 +246,6 @@ JWT_ACCESS_EXPIRATION=900000
 JWT_REFRESH_EXPIRATION=2592000000
 
 GOOGLE_CLIENT_ID=
-GOOGLE_CLIENT_SECRET=
 
 FIREBASE_PROJECT_ID=
 FIREBASE_CLIENT_EMAIL=
@@ -631,6 +631,26 @@ Support Google authentication suitable for Android and iOS mobile applications.
 The backend must verify Google-issued identity tokens. Never trust profile data sent by the mobile client without verifying the token.
 
 Any required Google credential must be documented in `SECRETS_SETUP.md`.
+
+### Implemented mobile flow
+
+The mobile application obtains a Google ID token using the `openid`, `email`, and
+`profile` scopes and sends only that token to `POST /api/v1/auth/google` as
+`{"idToken":"<google-id-token>"}`. The backend verifies Google's signature plus the
+Google issuer, `GOOGLE_CLIENT_ID` audience, and expiration, and requires a subject and
+verified email. Names and email are read exclusively from verified token claims. A
+new Google account is created on first login; later logins resolve the stored Google
+subject and issue the normal Sayarti access/refresh token response. Google ID tokens
+are neither logged nor stored.
+
+Automatic linking to an existing `LOCAL` account with the same verified email is
+intentionally forbidden. The endpoint returns `409 AUTH_ACCOUNT_LINKING_REQUIRED`;
+the user must first authenticate to that local account before any future explicit
+linking flow can safely be offered. This release does not implement such a linking
+endpoint and never changes a local account based only on possession of a Google token.
+
+No `GOOGLE_CLIENT_SECRET` is used or required because the backend does not exchange
+an authorization code.
 
 ---
 
