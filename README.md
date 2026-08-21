@@ -47,6 +47,9 @@ Local verification has completed successfully with:
 
 ```text
 ./mvnw clean verify
+The full Maven verification has completed successfully. The SQL Server-backed test
+suite started its Testcontainer, applied Flyway migrations, validated the Hibernate
+schema, and Maven reported `BUILD SUCCESS` with all tests passing.
 
 BUILD SUCCESS
 Tests run: 17
@@ -70,6 +73,7 @@ Docker / Testcontainers
 No Vehicle, Fuel, Maintenance, Expense, Reminder, Statistics, Dashboard, or other V1 vehicle-domain feature has been implemented yet.
 
 Email verification for LOCAL accounts is now part of the V1 scope and must be implemented before Vehicle Management begins.
+Checklist items below remain unchecked where completion still depends on owner-provided configuration, live external services, unfinished Docker Compose configuration, production verification, or unimplemented V1 business features.
 
 ---
 
@@ -180,6 +184,36 @@ External integrations also require real configuration and verification before be
 - [x] **Add Core Dependencies**
 - [x] **Configure Maven**
 
+```text
+Spring Web
+Spring Security
+Spring Data JPA
+Validation
+Microsoft SQL Server JDBC Driver
+Flyway Core
+Flyway SQL Server
+Lombok
+OpenAPI / Swagger
+JWT
+OAuth2 Client
+Firebase Admin SDK
+Spring Boot Test
+Spring Boot Testcontainers
+Testcontainers JUnit Jupiter
+Testcontainers Microsoft SQL Server
+```
+
+- [x] **Configure Maven**
+
+Configure:
+
+```text
+Java 17
+UTF-8
+Spring Boot Maven Plugin
+```
+
+The following command must succeed before this item is considered complete:
 Verified with:
 
 ```bash
@@ -782,6 +816,16 @@ No `GOOGLE_CLIENT_SECRET` is required for the current ID-token verification flow
 # 16. User Profile
 
 - [x] **Create User Entity**
+- [x] **Get Current User** — `GET /api/v1/users/me`
+- [x] **Update Current User** — `PATCH /api/v1/users/me`
+- [x] **Delete Account** — `DELETE /api/v1/users/me`
+
+Profile updates accept only `firstName` and `lastName`; identity, provider, credential,
+token, and internal security fields cannot be edited or exposed through this API.
+Account deletion uses the existing `deleted_at` soft-deletion strategy, revokes every
+active refresh token for the account, and causes existing access tokens to be rejected
+because authentication resolves only non-deleted users. A deleted account cannot log
+in or refresh a session.
 - [x] **Get Current User**
 - [x] **Update Current User**
 - [x] **Delete Account**
@@ -1066,6 +1110,18 @@ api.version=1.44
 - [x] Logout
 - [x] Google Authentication
 
+## User Profile Tests
+
+- [x] Get Current User
+- [x] Unauthenticated Profile Access
+- [x] Update First Name
+- [x] Update Last Name
+- [x] Profile Validation
+- [x] Protected Field Update Prevention
+- [x] Delete Account
+- [x] Revoke Deleted Account Sessions
+- [x] Reject Deleted Account Login and Refresh
+
 ## Email Verification Tests
 
 - [ ] Registration Creates Unverified LOCAL User
@@ -1164,6 +1220,11 @@ api.version=1.44
 - [x] Remove H2 Test Database
 - [x] Verify Docker Connectivity
 - [x] Verify Existing SQL Server Integration Test Suite
+- [x] **Configure Microsoft SQL Server Testcontainer**
+- [x] **Configure Spring Boot Testcontainers Integration**
+- [x] **Remove H2 Test Database**
+- [x] **Verify Docker Connectivity**
+- [x] **Verify Complete SQL Server Integration Test Suite**
 
 Current verified baseline:
 
@@ -1188,6 +1249,14 @@ Future DB-backed feature tests must continue using the shared SQL Server Testcon
 - [ ] Application Starts Using Production Profile Configuration
 - [ ] Docker Compose Stack Verified
 - [ ] Production Verification
+- [x] **Maven Build Passes**
+- [x] **All Automated Tests Pass**
+- [x] **SQL Server Integration Tests Pass**
+- [ ] **Application Starts Using Development Profile**
+- [ ] **Application Starts Using Production Profile Configuration**
+- [ ] **Docker Build Passes**
+- [x] **Local Docker Environment Verified**
+- [x] **Testcontainers Docker Connectivity Verified**
 
 Every new feature must rerun:
 
@@ -1205,6 +1274,9 @@ before its own checklist items are marked complete.
 - [x] Microsoft SQL Server
 - [x] Flyway Infrastructure
 - [x] Common API Infrastructure
+- [x] Microsoft SQL Server
+- [ ] Flyway
+- [ ] Common API Infrastructure
 - [x] Global Error Handling
 - [x] Spring Security
 - [x] JWT Authentication
@@ -1377,3 +1449,20 @@ Remove unused imports.
 Do not compress methods merely to reduce line count.
 Avoid unrelated formatting-only diffs.
 ```
+
+EXAMPLE:
+public AuthenticationResponse login(LoginRequest request) {
+    User user = userRepository.findByEmail(request.email())
+            .orElseThrow(() -> new AuthenticationException(
+                    ErrorCode.AUTH_INVALID_CREDENTIALS
+            ));
+    if (!passwordEncoder.matches(
+            request.password(),
+            user.getPasswordHash()
+    )) {
+        throw new AuthenticationException(
+                ErrorCode.AUTH_INVALID_CREDENTIALS
+        );
+    }
+    return authenticationMapper.toResponse(user);
+}
