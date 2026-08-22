@@ -66,7 +66,8 @@ class AuthenticationIntegrationTest extends AbstractIntegrationTest {
                               "firstName": "Sara",
                               "lastName": "Ali",
                               "email": "%s",
-                              "password": "StrongPass1"
+                              "password": "StrongPass1",
+                              "countryCode": "JO"
                             }
                             """.formatted(email)))
                         .andExpect(status().isCreated())
@@ -124,7 +125,8 @@ class AuthenticationIntegrationTest extends AbstractIntegrationTest {
                           "firstName": "A",
                           "lastName": "B",
                           "email": "SAME@example.com",
-                          "password": "StrongPass1"
+                          "password": "StrongPass1",
+                          "countryCode": "JO"
                         }
                         """))
                 .andExpect(status().isConflict())
@@ -140,7 +142,8 @@ class AuthenticationIntegrationTest extends AbstractIntegrationTest {
                           "firstName": "",
                           "lastName": "B",
                           "email": "bad",
-                          "password": "weak"
+                          "password": "weak",
+                              "countryCode": "JO"
                         }
                         """))
                 .andExpect(status().isBadRequest())

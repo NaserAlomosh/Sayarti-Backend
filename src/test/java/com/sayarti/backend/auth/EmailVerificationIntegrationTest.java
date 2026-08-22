@@ -93,7 +93,7 @@ class EmailVerificationIntegrationTest extends AbstractIntegrationTest {
 
     private void register(String email) throws Exception {
         mvc.perform(post("/api/v1/auth/register").contentType(MediaType.APPLICATION_JSON).content("""
-                {"firstName":"Sara","lastName":"Ali","email":"%s","password":"StrongPass1"}
+                {"firstName":"Sara","lastName":"Ali","email":"%s","password":"StrongPass1","countryCode":"JO"}
                 """.formatted(email)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.data.verificationRequired").value(true))
