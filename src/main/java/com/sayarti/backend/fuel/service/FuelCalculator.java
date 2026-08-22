@@ -1,6 +1,7 @@
 package com.sayarti.backend.fuel.service;
 
 import com.sayarti.backend.fuel.entity.FuelRecord;
+
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Instant;
@@ -29,41 +30,105 @@ public final class FuelCalculator {
                 .filter(record -> record.getDeletedAt() == null)
                 .sorted(HISTORICAL_ORDER)
                 .toList();
-        BigDecimal totalQuantity = records.stream().map(FuelRecord::getQuantityLiters)
+
+        BigDecimal totalQuantity = records.stream()
+                .map(FuelRecord::getQuantityLiters)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
+
         BigDecimal eligibleDistance = BigDecimal.ZERO;
         BigDecimal eligibleQuantity = BigDecimal.ZERO;
+
         for (int index = 1; index < records.size(); index++) {
             FuelRecord previous = records.get(index - 1);
             FuelRecord current = records.get(index);
-            BigDecimal distance = distance(current.getOdometerKm(), previous.getOdometerKm());
+
+            BigDecimal distance = distance(
+                    current.getOdometerKm(),
+                    previous.getOdometerKm());
+
             if (distance != null && current.getQuantityLiters().signum() > 0) {
                 eligibleDistance = eligibleDistance.add(distance);
-                eligibleQuantity = eligibleQuantity.add(current.getQuantityLiters());
+                eligibleQuantity = eligibleQuantity.add(
+                        current.getQuantityLiters());
             }
         }
-        BigDecimal kmPerLiter = divide(eligibleDistance, eligibleQuantity);
-        BigDecimal litersPer100 = eligibleDistance.signum() > 0 && eligibleQuantity.signum() > 0
-                ? eligibleQuantity.multiply(BigDecimal.valueOf(100))
-                        .divide(eligibleDistance, CALCULATION_SCALE, ROUNDING)
-                : null;
+
+        BigDecimal kmPerLiter = divide(
+                eligibleDistance,
+                eligibleQuantity);
+
+        BigDecimal litersPer100 =
+                eligibleDistance.signum() > 0
+                        && eligibleQuantity.signum() > 0
+                        ? eligibleQuantity
+                        .multiply(BigDecimal.valueOf(100))
+                        .divide(
+                                eligibleDistance,
+                                CALCULATION_SCALE,
+                                ROUNDING)
+                        : null;
+
         Map<String, BigDecimal> totals = new TreeMap<>();
         Map<String, BigDecimal> monthly = new TreeMap<>();
-        Instant from = month.atDay(1).atStartOfDay(ZoneOffset.UTC).toInstant();
-        Instant until = month.plusMonths(1).atDay(1).atStartOfDay(ZoneOffset.UTC).toInstant();
+
+        Instant from = month
+                .atDay(1)
+                .atStartOfDay(ZoneOffset.UTC)
+                .toInstant();
+
+        Instant until = month
+                .plusMonths(1)
+                .atDay(1)
+                .atStartOfDay(ZoneOffset.UTC)
+                .toInstant();
+
         for (FuelRecord record : records) {
-            totals.merge(record.getCurrencyCode(), record.getTotalCost(), BigDecimal::add);
-            if (!record.getFilledAt().isBefore(from) && record.getFilledAt().isBefore(until)) {
-                monthly.merge(record.getCurrencyCode(), record.getTotalCost(), BigDecimal::add);
+            totals.merge(
+                    record.getCurrencyCode(),
+                    record.getTotalCost(),
+                    BigDecimal::add);
+
+            if (!record.getFilledAt().isBefore(from)
+                    && record.getFilledAt().isBefore(until)) {
+                monthly.merge(
+                        record.getCurrencyCode(),
+                        record.getTotalCost(),
+                        BigDecimal::add);
             }
         }
+
         List<CostResult> costs = new ArrayList<>();
-        totals.forEach((currency, total) -> costs.add(new CostResult(currency, money(total),
-                money(monthly.getOrDefault(currency, BigDecimal.ZERO)),
-                eligibleDistance.signum() > 0
-                        ? total.divide(eligibleDistance, CALCULATION_SCALE, ROUNDING) : null)));
-        return new Result(quantity(totalQuantity), distanceScale(eligibleDistance), kmPerLiter,
-                litersPer100, List.copyOf(costs));
+
+        for (Map.Entry<String, BigDecimal> entry : totals.entrySet()) {
+            String currency = entry.getKey();
+            BigDecimal totalCost = entry.getValue();
+
+            BigDecimal monthlyCost = monthly.getOrDefault(
+                    currency,
+                    BigDecimal.ZERO);
+
+            BigDecimal costPerKilometer =
+                    eligibleDistance.signum() > 0
+                            ? totalCost.divide(
+                            eligibleDistance,
+                            CALCULATION_SCALE,
+                            ROUNDING)
+                            : null;
+
+            costs.add(
+                    new CostResult(
+                            currency,
+                            money(totalCost),
+                            money(monthlyCost),
+                            costPerKilometer));
+        }
+
+        return new Result(
+                quantity(totalQuantity),
+                distanceScale(eligibleDistance),
+                kmPerLiter,
+                litersPer100,
+                List.copyOf(costs));
     }
 
     public static BigDecimal distance(BigDecimal currentMileage, BigDecimal previousMileage) {
@@ -113,11 +178,11 @@ public final class FuelCalculator {
     }
 
     public record Result(BigDecimal totalQuantity, BigDecimal totalDistance,
-            BigDecimal averageKmPerLiter, BigDecimal averageLitersPer100Km,
-            List<CostResult> costs) {
+                         BigDecimal averageKmPerLiter, BigDecimal averageLitersPer100Km,
+                         List<CostResult> costs) {
     }
 
     public record CostResult(String currencyCode, BigDecimal totalCost, BigDecimal monthlyCost,
-            BigDecimal costPerKm) {
+                             BigDecimal costPerKm) {
     }
 }
