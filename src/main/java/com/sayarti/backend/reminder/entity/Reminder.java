@@ -25,6 +25,7 @@ public class Reminder {
     @Column(name = "target_mileage") private Long targetMileage;
     @Column(nullable = false) private boolean completed;
     @Column(name = "completed_at") private Instant completedAt;
+    @Column(name = "notification_delivered_at") private Instant notificationDeliveredAt;
     @Column(name = "created_at", nullable = false) private Instant createdAt;
     @Column(name = "updated_at", nullable = false) private Instant updatedAt;
     @Column(name = "deleted_at") private Instant deletedAt;
@@ -61,6 +62,9 @@ public class Reminder {
     }
 
     public void delete() { deletedAt = Instant.now(); updatedAt = deletedAt; }
+    public void markNotificationDelivered(Instant deliveredAt) {
+        notificationDeliveredAt = deliveredAt;
+    }
     public UUID getId() { return id; }
     public UUID getVehicleId() { return vehicleId; }
     public ReminderCategory getCategory() { return category; }
@@ -71,6 +75,7 @@ public class Reminder {
     public Long getTargetMileage() { return targetMileage; }
     public boolean isCompleted() { return completed; }
     public Instant getCompletedAt() { return completedAt; }
+    public Instant getNotificationDeliveredAt() { return notificationDeliveredAt; }
     public Instant getCreatedAt() { return createdAt; }
     public Instant getUpdatedAt() { return updatedAt; }
     public Instant getDeletedAt() { return deletedAt; }
