@@ -99,7 +99,7 @@ class ExpenseIntegrationTest extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$.data.amount").value(75.25))
                 .andExpect(jsonPath("$.data.category").value("REPAIR"))
                 .andExpect(jsonPath("$.data.title").value("Road expense"))
-                .andExpect(jsonPath("$.data.currencyCode").value("USD")));
+                .andExpect(jsonPath("$.data.currencyCode").value("USD"));
     }
 
     @Test
