@@ -8,11 +8,7 @@ import com.google.firebase.messaging.Notification;
 import com.sayarti.backend.notification.NotificationCommand;
 import com.sayarti.backend.notification.NotificationProvider;
 import com.sayarti.backend.notification.NotificationProviderException;
-import org.springframework.stereotype.Component;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 
-@Component
-@ConditionalOnBean(FirebaseMessaging.class)
 class FirebaseNotificationProvider implements NotificationProvider {
     private final FirebaseMessaging messaging;
 
