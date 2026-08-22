@@ -10,4 +10,5 @@ public interface MaintenanceRecordRepository extends JpaRepository<MaintenanceRe
     List<MaintenanceRecord> findAllByVehicleIdAndDeletedAtIsNullOrderByServiceDateDescCreatedAtDescIdDesc(
             UUID vehicleId);
     Optional<MaintenanceRecord> findByIdAndVehicleIdAndDeletedAtIsNull(UUID id, UUID vehicleId);
+    List<MaintenanceRecord> findAllByVehicleIdAndDeletedAtIsNull(UUID vehicleId);
 }
