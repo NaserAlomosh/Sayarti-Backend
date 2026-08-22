@@ -44,6 +44,8 @@ The Java 17 Maven/Spring Boot foundation currently includes:
 - Vehicle ownership enforcement for every maintenance-record endpoint.
 - Expense creation, history and detail retrieval, update, and soft deletion.
 - Vehicle ownership enforcement for every expense endpoint.
+- Reminder creation, retrieval, update, completion, and soft deletion.
+- Vehicle ownership enforcement for every reminder endpoint.
 - Microsoft SQL Server persistence.
 - Flyway schema migrations.
 - Hibernate schema validation.
@@ -60,7 +62,7 @@ Local verification has completed successfully with:
 ./mvnw clean verify
 
 BUILD SUCCESS
-Tests run: 80
+Tests run: 88
 Failures: 0
 Errors: 0
 Skipped: 0
@@ -80,8 +82,9 @@ Docker / Testcontainers
 
 Country/Currency Foundation, Vehicle Management, Vehicle-specific ownership protection,
 Fuel Tracking CRUD with ownership protection, Maintenance CRUD with ownership protection,
-and Expense CRUD with ownership protection are implemented and locally verified. Fuel
-Calculations, Reminders, Statistics, Dashboard, and Energy Tracking are not implemented yet.
+Expense CRUD with ownership protection, and Reminder CRUD and completion with ownership
+protection are implemented and locally verified. Fuel Calculations, reminder scheduling and
+notifications, Statistics, Dashboard, and Energy Tracking are not implemented yet.
 
 LOCAL email verification is implemented and locally verified. The provider-neutral SMTP
 adapter is implemented and automated-test covered. Real SMTP delivery remains
@@ -264,7 +267,7 @@ Required tables:
 - [x] `fuel_records`
 - [x] `maintenance_records`
 - [x] `expenses`
-- [ ] `reminders`
+- [x] `reminders`
 - [ ] `devices`
 
 All schema changes must be performed through Flyway migrations.
@@ -687,7 +690,7 @@ these vehicle fields.
 - [x] Protect Fuel APIs
 - [x] Protect Maintenance APIs
 - [x] Protect Expense APIs
-- [ ] Protect Reminder APIs
+- [x] Protect Reminder APIs
 - [ ] Protect Statistics APIs
 - [ ] Protect Dashboard APIs
 
@@ -746,14 +749,14 @@ these vehicle fields.
 
 # 23. Reminders
 
-- [ ] Create Reminder Entity
-- [ ] Create Reminder Repository
-- [ ] Create Reminder DTOs
-- [ ] Create Reminder
-- [ ] Get Reminders
-- [ ] Update Reminder
-- [ ] Complete Reminder
-- [ ] Delete Reminder
+- [x] Create Reminder Entity
+- [x] Create Reminder Repository
+- [x] Create Reminder DTOs
+- [x] Create Reminder
+- [x] Get Reminders
+- [x] Update Reminder
+- [x] Complete Reminder
+- [x] Delete Reminder
 
 ---
 
@@ -994,8 +997,8 @@ api.version=1.44
 
 ## Reminder Tests
 
-- [ ] Create Reminder
-- [ ] Complete Reminder
+- [x] Create Reminder
+- [x] Complete Reminder
 - [ ] Date Reminder
 - [ ] Mileage Reminder
 - [ ] Duplicate Notification Prevention
@@ -1017,7 +1020,7 @@ api.version=1.44
 - [x] Cross-User Fuel Access
 - [x] Cross-User Maintenance Access
 - [x] Cross-User Expense Access
-- [ ] Cross-User Reminder Access
+- [x] Cross-User Reminder Access
 
 ---
 
@@ -1033,7 +1036,7 @@ Current verified baseline:
 
 ```text
 BUILD SUCCESS
-Tests run: 80
+Tests run: 88
 Failures: 0
 Errors: 0
 Skipped: 0
@@ -1085,7 +1088,7 @@ before its own checklist items are marked complete.
 - [ ] Fuel Calculations
 - [x] Maintenance
 - [x] Expenses
-- [ ] Reminders
+- [x] Reminders
 - [ ] Device Management
 - [ ] Firebase Push Notifications
 - [ ] Reminder Scheduler
