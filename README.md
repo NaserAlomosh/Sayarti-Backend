@@ -40,6 +40,8 @@ The Java 17 Maven/Spring Boot foundation currently includes:
 - Vehicle-specific ownership enforcement for every vehicle endpoint.
 - Fuel-record creation, history and detail retrieval, update, and soft deletion.
 - Vehicle ownership enforcement for every fuel-record endpoint.
+- Maintenance-record creation, history and detail retrieval, update, and soft deletion.
+- Vehicle ownership enforcement for every maintenance-record endpoint.
 - Microsoft SQL Server persistence.
 - Flyway schema migrations.
 - Hibernate schema validation.
@@ -56,7 +58,7 @@ Local verification has completed successfully with:
 ./mvnw clean verify
 
 BUILD SUCCESS
-Tests run: 49
+Tests run: 71
 Failures: 0
 Errors: 0
 Skipped: 0
@@ -75,9 +77,9 @@ Docker / Testcontainers
 ```
 
 Country/Currency Foundation, Vehicle Management, Vehicle-specific ownership protection,
-and Fuel Tracking CRUD with ownership protection are implemented and locally verified.
-Fuel Calculations, Maintenance, Expense, Reminder, Statistics, Dashboard, and Energy
-Tracking are not implemented yet.
+Fuel Tracking CRUD with ownership protection, and Maintenance CRUD with ownership protection
+are implemented and locally verified. Fuel Calculations, Expense, Reminder, Statistics,
+Dashboard, and Energy Tracking are not implemented yet.
 
 LOCAL email verification is implemented and locally verified. The provider-neutral SMTP
 adapter is implemented and automated-test covered. Real SMTP delivery remains
@@ -258,7 +260,7 @@ Required tables:
 - [x] `currencies`
 - [x] `countries`
 - [x] `fuel_records`
-- [ ] `maintenance_records`
+- [x] `maintenance_records`
 - [ ] `expenses`
 - [ ] `reminders`
 - [ ] `devices`
@@ -681,7 +683,7 @@ these vehicle fields.
 - [x] Create Vehicle Ownership Validation
 - [x] Protect Vehicle APIs
 - [x] Protect Fuel APIs
-- [ ] Protect Maintenance APIs
+- [x] Protect Maintenance APIs
 - [ ] Protect Expense APIs
 - [ ] Protect Reminder APIs
 - [ ] Protect Statistics APIs
@@ -716,14 +718,14 @@ these vehicle fields.
 
 # 21. Maintenance
 
-- [ ] Create Maintenance Entity
-- [ ] Create Maintenance Repository
-- [ ] Create Maintenance DTOs
-- [ ] Create Maintenance Record
-- [ ] Get Maintenance History
-- [ ] Get Maintenance Record
-- [ ] Update Maintenance Record
-- [ ] Delete Maintenance Record
+- [x] Create Maintenance Entity
+- [x] Create Maintenance Repository
+- [x] Create Maintenance DTOs
+- [x] Create Maintenance Record
+- [x] Get Maintenance History
+- [x] Get Maintenance Record
+- [x] Update Maintenance Record
+- [x] Delete Maintenance Record
 
 ---
 
@@ -978,9 +980,9 @@ api.version=1.44
 
 ## Maintenance Tests
 
-- [ ] Create Maintenance
-- [ ] Update Maintenance
-- [ ] Delete Maintenance
+- [x] Create Maintenance
+- [x] Update Maintenance
+- [x] Delete Maintenance
 
 ## Expense Tests
 
@@ -1011,7 +1013,7 @@ api.version=1.44
 - [x] Expired JWT
 - [x] Cross-User Vehicle Access
 - [x] Cross-User Fuel Access
-- [ ] Cross-User Maintenance Access
+- [x] Cross-User Maintenance Access
 - [ ] Cross-User Expense Access
 - [ ] Cross-User Reminder Access
 
@@ -1029,7 +1031,7 @@ Current verified baseline:
 
 ```text
 BUILD SUCCESS
-Tests run: 49
+Tests run: 71
 Failures: 0
 Errors: 0
 Skipped: 0
@@ -1079,7 +1081,7 @@ before its own checklist items are marked complete.
 - [x] Vehicle Ownership Security
 - [x] Fuel Tracking
 - [ ] Fuel Calculations
-- [ ] Maintenance
+- [x] Maintenance
 - [ ] Expenses
 - [ ] Reminders
 - [ ] Device Management
