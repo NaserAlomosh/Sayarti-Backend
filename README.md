@@ -35,8 +35,11 @@ The Java 17 Maven/Spring Boot foundation currently includes:
 - Current-user resolution.
 - Backend-verified Google ID-token authentication.
 - User profile retrieval, update, and soft deletion.
+- Country and currency reference data, country selection, and user default-currency support.
 - Vehicle creation, retrieval, update, mileage updates, and soft deletion.
 - Vehicle-specific ownership enforcement for every vehicle endpoint.
+- Fuel-record creation, history and detail retrieval, update, and soft deletion.
+- Vehicle ownership enforcement for every fuel-record endpoint.
 - Microsoft SQL Server persistence.
 - Flyway schema migrations.
 - Hibernate schema validation.
@@ -53,7 +56,7 @@ Local verification has completed successfully with:
 ./mvnw clean verify
 
 BUILD SUCCESS
-Tests run: 37
+Tests run: 49
 Failures: 0
 Errors: 0
 Skipped: 0
@@ -71,9 +74,10 @@ Docker / Testcontainers
 → BUILD SUCCESS
 ```
 
-Vehicle Management and Vehicle-specific ownership protection are implemented and locally
-verified. Fuel, Maintenance, Expense, Reminder, Statistics, Dashboard, and Energy Tracking
-are not implemented yet.
+Country/Currency Foundation, Vehicle Management, Vehicle-specific ownership protection,
+and Fuel Tracking CRUD with ownership protection are implemented and locally verified.
+Fuel Calculations, Maintenance, Expense, Reminder, Statistics, Dashboard, and Energy
+Tracking are not implemented yet.
 
 LOCAL email verification is implemented and locally verified. The provider-neutral SMTP
 adapter is implemented and automated-test covered. Real SMTP delivery remains
@@ -251,7 +255,9 @@ Required tables:
 - [x] `refresh_tokens`
 - [x] `email_verification_otps`
 - [x] `vehicles`
-- [ ] `fuel_records`
+- [x] `currencies`
+- [x] `countries`
+- [x] `fuel_records`
 - [ ] `maintenance_records`
 - [ ] `expenses`
 - [ ] `reminders`
@@ -674,7 +680,7 @@ these vehicle fields.
 
 - [x] Create Vehicle Ownership Validation
 - [x] Protect Vehicle APIs
-- [ ] Protect Fuel APIs
+- [x] Protect Fuel APIs
 - [ ] Protect Maintenance APIs
 - [ ] Protect Expense APIs
 - [ ] Protect Reminder APIs
@@ -685,14 +691,14 @@ these vehicle fields.
 
 # 19. Fuel Tracking
 
-- [ ] Create Fuel Entity
-- [ ] Create Fuel Repository
-- [ ] Create Fuel DTOs
-- [ ] Create Fuel Record
-- [ ] Get Fuel History
-- [ ] Get Fuel Record
-- [ ] Update Fuel Record
-- [ ] Delete Fuel Record
+- [x] Create Fuel Entity
+- [x] Create Fuel Repository
+- [x] Create Fuel DTOs
+- [x] Create Fuel Record
+- [x] Get Fuel History
+- [x] Get Fuel Record
+- [x] Update Fuel Record
+- [x] Delete Fuel Record
 
 ---
 
@@ -963,9 +969,9 @@ api.version=1.44
 
 ## Fuel Tests
 
-- [ ] Create Fuel Record
-- [ ] Update Fuel Record
-- [ ] Delete Fuel Record
+- [x] Create Fuel Record
+- [x] Update Fuel Record
+- [x] Delete Fuel Record
 - [ ] Fuel Efficiency
 - [ ] L/100km
 - [ ] Cost Per Kilometer
@@ -1004,7 +1010,7 @@ api.version=1.44
 - [x] Invalid JWT
 - [x] Expired JWT
 - [x] Cross-User Vehicle Access
-- [ ] Cross-User Fuel Access
+- [x] Cross-User Fuel Access
 - [ ] Cross-User Maintenance Access
 - [ ] Cross-User Expense Access
 - [ ] Cross-User Reminder Access
@@ -1023,7 +1029,7 @@ Current verified baseline:
 
 ```text
 BUILD SUCCESS
-Tests run: 37
+Tests run: 49
 Failures: 0
 Errors: 0
 Skipped: 0
@@ -1071,7 +1077,7 @@ before its own checklist items are marked complete.
 - [x] User Profile
 - [x] Vehicle Management
 - [x] Vehicle Ownership Security
-- [ ] Fuel Tracking
+- [x] Fuel Tracking
 - [ ] Fuel Calculations
 - [ ] Maintenance
 - [ ] Expenses
