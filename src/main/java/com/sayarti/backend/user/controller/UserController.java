@@ -3,6 +3,8 @@ package com.sayarti.backend.user.controller;
 import com.sayarti.backend.common.response.ApiResponse;
 import com.sayarti.backend.security.jwt.AuthenticatedUser;
 import com.sayarti.backend.user.dto.DeleteUserResponse;
+import com.sayarti.backend.user.dto.SelectCountryRequest;
+import com.sayarti.backend.user.dto.ChangeDefaultCurrencyRequest;
 import com.sayarti.backend.user.dto.UpdateUserRequest;
 import com.sayarti.backend.user.dto.UserResponse;
 import com.sayarti.backend.user.service.UserService;
@@ -65,6 +67,23 @@ public class UserController {
             @AuthenticationPrincipal AuthenticatedUser user,
             @Valid @RequestBody UpdateUserRequest request) {
         return ApiResponse.success(service.update(user, request), "Profile updated");
+    }
+
+    @PatchMapping("/me/country")
+    @Operation(summary = "Select the current user's country")
+    public ApiResponse<UserResponse> selectCountry(
+            @AuthenticationPrincipal AuthenticatedUser user,
+            @Valid @RequestBody SelectCountryRequest request) {
+        return ApiResponse.success(service.selectCountry(user, request), "Country selected");
+    }
+
+    @PatchMapping("/me/default-currency")
+    @Operation(summary = "Change the current user's preferred currency")
+    public ApiResponse<UserResponse> changeDefaultCurrency(
+            @AuthenticationPrincipal AuthenticatedUser user,
+            @Valid @RequestBody ChangeDefaultCurrencyRequest request) {
+        return ApiResponse.success(service.changeDefaultCurrency(user, request),
+                "Default currency updated");
     }
 
     @DeleteMapping("/me")

@@ -11,6 +11,8 @@ public record UserResponse(
         String email,
         boolean emailVerified,
         String authProvider,
+        String countryCode,
+        String defaultCurrencyCode,
         Instant createdAt,
         Instant updatedAt) {
     public static UserResponse from(User user) {
@@ -21,6 +23,8 @@ public record UserResponse(
                 user.getEmail(),
                 user.isEmailVerified(),
                 user.getAuthProvider().name(),
+                user.getCountryCode(),
+                user.getDefaultCurrencyCode(),
                 user.getCreatedAt(),
                 user.getUpdatedAt());
     }

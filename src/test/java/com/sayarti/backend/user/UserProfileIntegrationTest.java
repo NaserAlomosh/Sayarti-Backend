@@ -201,7 +201,8 @@ class UserProfileIntegrationTest extends AbstractIntegrationTest {
                                                          "firstName": "Sara",
                                                          "lastName": "Ali",
                                                          "email": "%s",
-                                                         "password": "%s"
+                                                         "password": "%s",
+                              "countryCode": "JO"
                                                        }
                                                        """.formatted(EMAIL, PASSWORD)))
                                    .andExpect(status().isCreated())

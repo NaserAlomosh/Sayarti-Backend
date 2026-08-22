@@ -32,6 +32,10 @@ public class User {
     private AuthProvider authProvider;
     @Column(name = "email_verified", nullable = false)
     private boolean emailVerified;
+    @Column(name = "country_code", length = 2)
+    private String countryCode;
+    @Column(name = "default_currency_code", length = 3)
+    private String defaultCurrencyCode;
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
     @Column(name = "updated_at", nullable = false)
@@ -51,6 +55,13 @@ public class User {
         this.emailVerified = false;
         this.createdAt = Instant.now();
         this.updatedAt = this.createdAt;
+    }
+
+    public User(String firstName, String lastName, String email, String passwordHash,
+            String countryCode, String defaultCurrencyCode) {
+        this(firstName, lastName, email, passwordHash);
+        this.countryCode = countryCode;
+        this.defaultCurrencyCode = defaultCurrencyCode;
     }
 
     public static User google(
@@ -109,6 +120,22 @@ public class User {
     }
 
     public boolean isEmailVerified() { return emailVerified; }
+    public String getCountryCode() { return countryCode; }
+    public String getDefaultCurrencyCode() { return defaultCurrencyCode; }
+    public boolean isCountrySetupComplete() {
+        return countryCode != null && defaultCurrencyCode != null;
+    }
+
+    public void selectCountry(String countryCode, String defaultCurrencyCode) {
+        this.countryCode = countryCode;
+        this.defaultCurrencyCode = defaultCurrencyCode;
+        this.updatedAt = Instant.now();
+    }
+
+    public void changeDefaultCurrency(String currencyCode) {
+        this.defaultCurrencyCode = currencyCode;
+        this.updatedAt = Instant.now();
+    }
 
     public void verifyEmail() {
         this.emailVerified = true;

@@ -155,7 +155,7 @@ class VehicleIntegrationTest extends AbstractIntegrationTest {
 
     private Session session(String email) throws Exception {
         mvc.perform(post("/api/v1/auth/register").contentType(MediaType.APPLICATION_JSON).content("""
-                {"firstName":"Vehicle","lastName":"Owner","email":"%s","password":"StrongPass1"}
+                {"firstName":"Vehicle","lastName":"Owner","email":"%s","password":"StrongPass1","countryCode":"JO"}
                 """.formatted(email))).andExpect(status().isCreated());
         var user = users.findByEmailIgnoreCaseAndDeletedAtIsNull(email).orElseThrow();
         user.verifyEmail(); users.saveAndFlush(user);

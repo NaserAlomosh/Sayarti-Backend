@@ -13,6 +13,8 @@ import com.sayarti.backend.common.exception.ApiException;
 import com.sayarti.backend.common.exception.ErrorCode;
 import com.sayarti.backend.email.EmailDeliveryException;
 import com.sayarti.backend.security.jwt.JwtService;
+import com.sayarti.backend.reference.entity.Country;
+import com.sayarti.backend.reference.service.ReferenceDataService;
 import com.sayarti.backend.security.oauth.GoogleIdentity;
 import com.sayarti.backend.security.oauth.GoogleTokenVerifier;
 import com.sayarti.backend.user.dto.UserResponse;
@@ -34,15 +36,17 @@ public class AuthService {
     private final RefreshTokenService refreshTokens;
     private final GoogleTokenVerifier googleTokens;
     private final EmailVerificationService emailVerification;
+    private final ReferenceDataService referenceData;
     public AuthService(UserRepository users, PasswordEncoder encoder, JwtService jwt,
             RefreshTokenService refreshTokens, GoogleTokenVerifier googleTokens,
-            EmailVerificationService emailVerification) {
+            EmailVerificationService emailVerification, ReferenceDataService referenceData) {
         this.users = users;
         this.encoder = encoder;
         this.jwt = jwt;
         this.refreshTokens = refreshTokens;
         this.googleTokens = googleTokens;
         this.emailVerification = emailVerification;
+        this.referenceData = referenceData;
     }
     @Transactional(noRollbackFor = EmailDeliveryException.class)
     public RegistrationResponse register(RegisterRequest r) {
@@ -50,8 +54,9 @@ public class AuthService {
         if (users.existsByEmailIgnoreCase(email)) {
             throw conflict();
         }
-        User user = new User(
-                r.firstName().trim(), r.lastName().trim(), email, encoder.encode(r.password()));
+        Country country = referenceData.requireCountry(r.countryCode());
+        User user = new User(r.firstName().trim(), r.lastName().trim(), email,
+                encoder.encode(r.password()), country.getCode(), country.getDefaultCurrencyCode());
         try {
             users.saveAndFlush(user);
         } catch (DataIntegrityViolationException e) {
@@ -155,7 +160,8 @@ public class AuthService {
 
     private AuthResponse response(User u, String refresh) {
         return new AuthResponse(jwt.generateAccessToken(u), refresh, "Bearer",
-                jwt.accessExpirationSeconds(), UserResponse.from(u));
+                jwt.accessExpirationSeconds(), UserResponse.from(u),
+                u.isCountrySetupComplete() ? null : "SELECT_COUNTRY");
     }
 
     private String normalize(String email) {
