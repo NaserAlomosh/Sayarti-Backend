@@ -4,6 +4,7 @@ import com.sayarti.backend.common.response.ApiResponse;
 import com.sayarti.backend.fuel.dto.CreateFuelRecordRequest;
 import com.sayarti.backend.fuel.dto.DeleteFuelRecordResponse;
 import com.sayarti.backend.fuel.dto.FuelRecordResponse;
+import com.sayarti.backend.fuel.dto.FuelSummaryResponse;
 import com.sayarti.backend.fuel.dto.UpdateFuelRecordRequest;
 import com.sayarti.backend.fuel.service.FuelRecordService;
 import com.sayarti.backend.security.jwt.AuthenticatedUser;
@@ -11,6 +12,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import java.time.YearMonth;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
@@ -22,6 +24,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -61,6 +64,23 @@ public class FuelRecordController {
     public ApiResponse<FuelRecordResponse> get(@AuthenticationPrincipal AuthenticatedUser user,
             @PathVariable UUID vehicleId, @PathVariable UUID fuelRecordId) {
         return ApiResponse.success(service.get(user, vehicleId, fuelRecordId));
+    }
+
+    @GetMapping("/summary")
+    @Operation(summary = "Calculate fuel summary", description = "Requires authentication and "
+            + "vehicle ownership. The optional month uses YYYY-MM and UTC calendar boundaries; "
+            + "it defaults to the current UTC month. Active records are ordered by filledAt, "
+            + "odometer, creation time, and id, independent of insertion order. Positive adjacent "
+            + "odometer differences contribute distance and the later refill's liters. Aggregate "
+            + "km/L is total eligible distance / total eligible liters; L/100km is the inverse "
+            + "formula. Consumption and cost/km are null if no positive-distance pair exists. "
+            + "Electric-only vehicles return liquidFuelCalculationsSupported=false and null "
+            + "consumption values. Costs are grouped by retained currency without conversion.")
+    public ApiResponse<FuelSummaryResponse> summary(
+            @AuthenticationPrincipal AuthenticatedUser user, @PathVariable UUID vehicleId,
+            @RequestParam(required = false) YearMonth month) {
+        YearMonth requested = month == null ? YearMonth.now(java.time.Clock.systemUTC()) : month;
+        return ApiResponse.success(service.summary(user, vehicleId, requested));
     }
 
     @PatchMapping("/{fuelRecordId}")

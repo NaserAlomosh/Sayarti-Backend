@@ -4,7 +4,9 @@ import com.sayarti.backend.common.exception.BusinessValidationException;
 import com.sayarti.backend.common.exception.ErrorCode;
 import com.sayarti.backend.common.exception.ResourceNotFoundException;
 import com.sayarti.backend.fuel.dto.CreateFuelRecordRequest;
+import com.sayarti.backend.fuel.dto.FuelCostSummary;
 import com.sayarti.backend.fuel.dto.FuelRecordResponse;
+import com.sayarti.backend.fuel.dto.FuelSummaryResponse;
 import com.sayarti.backend.fuel.dto.UpdateFuelRecordRequest;
 import com.sayarti.backend.fuel.entity.FuelRecord;
 import com.sayarti.backend.fuel.repository.FuelRecordRepository;
@@ -17,6 +19,7 @@ import com.sayarti.backend.vehicle.entity.Vehicle;
 import com.sayarti.backend.vehicle.repository.VehicleRepository;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.YearMonth;
 import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
@@ -95,6 +98,22 @@ public class FuelRecordService {
     public void delete(AuthenticatedUser authenticated, UUID vehicleId, UUID recordId) {
         ownedVehicle(authenticated, vehicleId);
         activeRecord(vehicleId, recordId).delete();
+    }
+
+    @Transactional(readOnly = true)
+    public FuelSummaryResponse summary(AuthenticatedUser authenticated, UUID vehicleId,
+            YearMonth month) {
+        Vehicle vehicle = ownedVehicle(authenticated, vehicleId);
+        boolean supported = vehicle.getPowertrainType() != PowertrainType.ELECTRIC;
+        FuelCalculator.Result result = FuelCalculator.calculate(
+                records.findAllByVehicleIdAndDeletedAtIsNull(vehicleId), month);
+        List<FuelCostSummary> costs = result.costs().stream()
+                .map(cost -> new FuelCostSummary(cost.currencyCode(), cost.totalCost(),
+                        cost.monthlyCost(), supported ? cost.costPerKm() : null))
+                .toList();
+        return new FuelSummaryResponse(vehicleId, supported, month, result.totalQuantity(),
+                result.totalDistance(), supported ? result.averageKmPerLiter() : null,
+                supported ? result.averageLitersPer100Km() : null, costs);
     }
 
     private Vehicle ownedVehicle(AuthenticatedUser user, UUID id) {

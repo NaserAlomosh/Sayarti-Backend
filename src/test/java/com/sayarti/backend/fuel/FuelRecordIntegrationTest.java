@@ -223,6 +223,70 @@ class FuelRecordIntegrationTest extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$.data.currencyCode").value("JOD"));
     }
 
+    @Test
+    void summaryCalculatesAggregateAndUtcMonthlyCosts() throws Exception {
+        Session session = session("fuel-summary@example.com");
+        UUID vehicleId = vehicle(session, "GASOLINE", 1000);
+        create(session, vehicleId, fuelBody(1000, "30", "2", "2026-07-31T23:59:59Z"))
+                .andExpect(status().isCreated());
+        create(session, vehicleId, fuelBody(1300, "20", "3", "2026-08-01T00:00:00Z"))
+                .andExpect(status().isCreated());
+        create(session, vehicleId, fuelBody(1800, "50", "2", "2026-08-31T23:59:59Z"))
+                .andExpect(status().isCreated());
+
+        mvc.perform(get(url(vehicleId) + "/summary?month=2026-08")
+                        .header("Authorization", bearer(session)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.totalFuelQuantity").value(100.0))
+                .andExpect(jsonPath("$.data.totalDistanceKm").value(800.0))
+                .andExpect(jsonPath("$.data.averageFuelEfficiencyKmPerLiter").value(11.4286))
+                .andExpect(jsonPath("$.data.averageLitersPer100Km").value(8.75))
+                .andExpect(jsonPath("$.data.costsByCurrency[0].totalFuelCost").value(220.0))
+                .andExpect(jsonPath("$.data.costsByCurrency[0].monthlyFuelCost").value(160.0))
+                .andExpect(jsonPath("$.data.costsByCurrency[0].costPerKm").value(0.275));
+    }
+
+    @Test
+    void summaryExcludesDeletedRecordsAndProtectsOwnershipAndMissingVehicles() throws Exception {
+        Session owner = session("summary-owner@example.com");
+        Session other = session("summary-other@example.com");
+        UUID vehicleId = vehicle(owner, "GASOLINE", 1000);
+        UUID first = recordId(create(owner, vehicleId,
+                fuelBody(1000, "40", "2", "2026-08-01T10:00:00Z"))
+                .andReturn().getResponse().getContentAsString());
+        create(owner, vehicleId, fuelBody(1500, "40", "2", "2026-08-02T10:00:00Z"));
+        mvc.perform(delete(url(vehicleId) + "/" + first).header("Authorization", bearer(owner)))
+                .andExpect(status().isOk());
+        mvc.perform(get(url(vehicleId) + "/summary?month=2026-08")
+                        .header("Authorization", bearer(owner)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.totalFuelQuantity").value(40.0))
+                .andExpect(jsonPath("$.data.totalDistanceKm").value(0.0))
+                .andExpect(jsonPath("$.data.averageFuelEfficiencyKmPerLiter").doesNotExist());
+        mvc.perform(get(url(vehicleId) + "/summary").header("Authorization", bearer(other)))
+                .andExpect(status().isNotFound());
+        mvc.perform(get(url(UUID.randomUUID()) + "/summary")
+                        .header("Authorization", bearer(owner)))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void emptyLiquidAndElectricSummariesDocumentUnavailableConsumption() throws Exception {
+        Session session = session("empty-summary@example.com");
+        UUID liquid = vehicle(session, "DIESEL", 1000);
+        UUID electric = vehicle(session, "ELECTRIC", 1000);
+        mvc.perform(get(url(liquid) + "/summary?month=2026-08")
+                        .header("Authorization", bearer(session)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.liquidFuelCalculationsSupported").value(true))
+                .andExpect(jsonPath("$.data.costsByCurrency.length()").value(0));
+        mvc.perform(get(url(electric) + "/summary?month=2026-08")
+                        .header("Authorization", bearer(session)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.liquidFuelCalculationsSupported").value(false))
+                .andExpect(jsonPath("$.data.averageFuelEfficiencyKmPerLiter").doesNotExist());
+    }
+
     private org.springframework.test.web.servlet.ResultActions create(
             Session session, UUID vehicleId, String body) throws Exception {
         return mvc.perform(post(url(vehicleId)).header("Authorization", bearer(session))
@@ -264,6 +328,12 @@ class FuelRecordIntegrationTest extends AbstractIntegrationTest {
                  "filledAt":"2026-08-20T10:00:00Z","fullTank":true,
                  "stationName":"Station","notes":"Road trip"}
                 """.formatted(odometer, currencyField);
+    }
+    private String fuelBody(long odometer, String quantity, String price, String filledAt) {
+        return """
+                {"odometerKm":%d,"quantityLiters":%s,"pricePerLiter":%s,
+                 "currencyCode":"USD","filledAt":"%s","fullTank":true}
+                """.formatted(odometer, quantity, price, filledAt);
     }
     private UUID recordId(String response) throws Exception {
         return UUID.fromString(json.readTree(response).path("data").path("id").asText());
