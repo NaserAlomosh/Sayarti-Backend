@@ -470,7 +470,7 @@ The Firebase project may use the same underlying Google Cloud project as Sayarti
 
 ## Status
 
-- [ ] Firebase Admin credentials provided
+- [ ] Required from project owner: valid Firebase Admin credentials and real-device delivery verification
 
 ## Environment Variables
 
@@ -518,15 +518,33 @@ Private keys commonly contain newline characters.
 
 When stored as environment variables, the backend must correctly restore escaped `\n` sequences if necessary.
 
+The backend reads only the three environment variables above. It builds the service-account
+credential in memory and converts literal escaped newline sequences (`\\n`) in
+`FIREBASE_PRIVATE_KEY` back to PEM newlines. Do not add a service-account JSON file to the
+repository.
+
+All three values must be present for Firebase beans to be enabled. When they are absent, the
+application can still start and notification attempts fail safely without contacting Firebase
+or deleting registered devices. The exact configuration still required from the project owner is:
+
+1. The Firebase project ID in `FIREBASE_PROJECT_ID`.
+2. The Admin SDK service-account email in `FIREBASE_CLIENT_EMAIL`.
+3. The complete PEM private key in `FIREBASE_PRIVATE_KEY`, preferably stored in a deployment
+   secrets manager; escaped newlines are supported.
+
 Do not commit the downloaded service account JSON file.
 
 ## Verification
 
-- Firebase Admin SDK initializes.
-- A test device is registered.
-- The backend successfully sends a test message.
-- Android receives it.
-- iOS receives it after APNs configuration is complete.
+- [ ] Firebase Admin SDK initializes with owner-provided credentials.
+- [ ] A test device is registered with a real FCM registration token.
+- [ ] The backend successfully sends a test message through Firebase.
+- [ ] Android receives it.
+- [ ] iOS receives it after APNs configuration is complete.
+
+Automated tests use generated test credential material and mocked notification-provider
+dependencies; they never send a real Firebase message. Real Firebase delivery has therefore
+not been verified and must remain pending until the owner completes every applicable step above.
 
 ---
 
