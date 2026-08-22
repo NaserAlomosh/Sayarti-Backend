@@ -72,6 +72,4 @@ sayarti:
     max-attempts: ${EMAIL_OTP_MAX_ATTEMPTS:5}
     resend-cooldown-seconds: ${EMAIL_OTP_RESEND_COOLDOWN_SECONDS:60}
   firebase:
-    project-id: ${FIREBASE_PROJECT_ID:}
-    client-email: ${FIREBASE_CLIENT_EMAIL:}
-    private-key: ${FIREBASE_PRIVATE_KEY:}
+    service-account-path: ${FIREBASE_SERVICE_ACCOUNT_PATH:}
