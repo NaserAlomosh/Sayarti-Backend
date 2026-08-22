@@ -5,6 +5,7 @@ import com.google.auth.oauth2.ServiceAccountCredentials;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.messaging.FirebaseMessaging;
+import com.sayarti.backend.notification.NotificationProvider;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -41,6 +42,11 @@ public class FirebaseConfiguration {
     @Bean
     FirebaseMessaging firebaseMessaging(FirebaseApp firebaseApp) {
         return FirebaseMessaging.getInstance(firebaseApp);
+    }
+
+    @Bean
+    NotificationProvider firebaseNotificationProvider(FirebaseMessaging firebaseMessaging) {
+        return new FirebaseNotificationProvider(firebaseMessaging);
     }
 
     static GoogleCredentials loadCredentials(String serviceAccountPath) throws IOException {

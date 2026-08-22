@@ -7,6 +7,7 @@ import static org.mockito.Mockito.when;
 
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.messaging.FirebaseMessaging;
+import com.sayarti.backend.notification.NotificationProvider;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -31,8 +32,12 @@ class FirebaseConfigurationTest {
                 .firebaseApp(new FirebaseProperties(credentialFile.toString()));
         try {
             assertThat(app.getOptions().getProjectId()).isEqualTo("test-project");
-            assertThat(new FirebaseConfiguration().firebaseMessaging(app))
+            FirebaseMessaging messaging = new FirebaseConfiguration().firebaseMessaging(app);
+            assertThat(messaging)
                     .isInstanceOf(FirebaseMessaging.class);
+            assertThat(new FirebaseConfiguration().firebaseNotificationProvider(messaging))
+                    .isInstanceOf(NotificationProvider.class)
+                    .isInstanceOf(FirebaseNotificationProvider.class);
             assertThat(new FirebaseConfiguration()
                     .firebaseApp(new FirebaseProperties(temporaryDirectory
                             .resolve("not-needed-when-app-exists.json").toString())))
