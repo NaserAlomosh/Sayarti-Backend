@@ -14,6 +14,7 @@ import org.springframework.data.repository.query.Param;
 public interface ReminderRepository extends JpaRepository<Reminder, UUID> {
     List<Reminder> findAllByVehicleIdAndDeletedAtIsNullOrderByCreatedAtDescIdDesc(UUID vehicleId);
     Optional<Reminder> findByIdAndVehicleIdAndDeletedAtIsNull(UUID id, UUID vehicleId);
+    List<Reminder> findAllByVehicleIdAndDeletedAtIsNull(UUID vehicleId);
     List<Reminder> findAllByVehicleIdAndCompletedFalseAndDeletedAtIsNullOrderByCreatedAtDescIdDesc(
             UUID vehicleId);
 

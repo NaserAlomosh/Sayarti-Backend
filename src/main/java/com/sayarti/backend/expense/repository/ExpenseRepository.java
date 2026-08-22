@@ -10,4 +10,5 @@ public interface ExpenseRepository extends JpaRepository<Expense, UUID> {
     List<Expense> findAllByVehicleIdAndDeletedAtIsNullOrderByExpenseDateDescCreatedAtDescIdDesc(
             UUID vehicleId);
     Optional<Expense> findByIdAndVehicleIdAndDeletedAtIsNull(UUID id, UUID vehicleId);
+    List<Expense> findAllByVehicleIdAndDeletedAtIsNull(UUID vehicleId);
 }
