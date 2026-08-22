@@ -42,6 +42,8 @@ The Java 17 Maven/Spring Boot foundation currently includes:
 - Vehicle ownership enforcement for every fuel-record endpoint.
 - Maintenance-record creation, history and detail retrieval, update, and soft deletion.
 - Vehicle ownership enforcement for every maintenance-record endpoint.
+- Expense creation, history and detail retrieval, update, and soft deletion.
+- Vehicle ownership enforcement for every expense endpoint.
 - Microsoft SQL Server persistence.
 - Flyway schema migrations.
 - Hibernate schema validation.
@@ -58,7 +60,7 @@ Local verification has completed successfully with:
 ./mvnw clean verify
 
 BUILD SUCCESS
-Tests run: 71
+Tests run: 80
 Failures: 0
 Errors: 0
 Skipped: 0
@@ -77,9 +79,9 @@ Docker / Testcontainers
 ```
 
 Country/Currency Foundation, Vehicle Management, Vehicle-specific ownership protection,
-Fuel Tracking CRUD with ownership protection, and Maintenance CRUD with ownership protection
-are implemented and locally verified. Fuel Calculations, Expense, Reminder, Statistics,
-Dashboard, and Energy Tracking are not implemented yet.
+Fuel Tracking CRUD with ownership protection, Maintenance CRUD with ownership protection,
+and Expense CRUD with ownership protection are implemented and locally verified. Fuel
+Calculations, Reminders, Statistics, Dashboard, and Energy Tracking are not implemented yet.
 
 LOCAL email verification is implemented and locally verified. The provider-neutral SMTP
 adapter is implemented and automated-test covered. Real SMTP delivery remains
@@ -261,7 +263,7 @@ Required tables:
 - [x] `countries`
 - [x] `fuel_records`
 - [x] `maintenance_records`
-- [ ] `expenses`
+- [x] `expenses`
 - [ ] `reminders`
 - [ ] `devices`
 
@@ -684,7 +686,7 @@ these vehicle fields.
 - [x] Protect Vehicle APIs
 - [x] Protect Fuel APIs
 - [x] Protect Maintenance APIs
-- [ ] Protect Expense APIs
+- [x] Protect Expense APIs
 - [ ] Protect Reminder APIs
 - [ ] Protect Statistics APIs
 - [ ] Protect Dashboard APIs
@@ -731,14 +733,14 @@ these vehicle fields.
 
 # 22. Expenses
 
-- [ ] Create Expense Entity
-- [ ] Create Expense Repository
-- [ ] Create Expense DTOs
-- [ ] Create Expense
-- [ ] Get Expenses
-- [ ] Get Expense
-- [ ] Update Expense
-- [ ] Delete Expense
+- [x] Create Expense Entity
+- [x] Create Expense Repository
+- [x] Create Expense DTOs
+- [x] Create Expense
+- [x] Get Expenses
+- [x] Get Expense
+- [x] Update Expense
+- [x] Delete Expense
 
 ---
 
@@ -986,9 +988,9 @@ api.version=1.44
 
 ## Expense Tests
 
-- [ ] Create Expense
-- [ ] Update Expense
-- [ ] Delete Expense
+- [x] Create Expense
+- [x] Update Expense
+- [x] Delete Expense
 
 ## Reminder Tests
 
@@ -1014,7 +1016,7 @@ api.version=1.44
 - [x] Cross-User Vehicle Access
 - [x] Cross-User Fuel Access
 - [x] Cross-User Maintenance Access
-- [ ] Cross-User Expense Access
+- [x] Cross-User Expense Access
 - [ ] Cross-User Reminder Access
 
 ---
@@ -1031,7 +1033,7 @@ Current verified baseline:
 
 ```text
 BUILD SUCCESS
-Tests run: 71
+Tests run: 80
 Failures: 0
 Errors: 0
 Skipped: 0
@@ -1082,7 +1084,7 @@ before its own checklist items are marked complete.
 - [x] Fuel Tracking
 - [ ] Fuel Calculations
 - [x] Maintenance
-- [ ] Expenses
+- [x] Expenses
 - [ ] Reminders
 - [ ] Device Management
 - [ ] Firebase Push Notifications
