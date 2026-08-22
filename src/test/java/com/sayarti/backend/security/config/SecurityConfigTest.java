@@ -11,6 +11,8 @@ import com.sayarti.backend.user.repository.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -18,13 +20,14 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @WebMvcTest(
-        controllers = SecurityConfigTest.TestEndpoint.class,
+        useDefaultFilters = false,
         properties = "sayarti.cors.allowed-origins=http://localhost")
 @Import({
     SecurityConfig.class,
     JwtAuthenticationFilter.class,
     RestAuthenticationEntryPoint.class,
-    RestAccessDeniedHandler.class
+    RestAccessDeniedHandler.class,
+    SecurityConfigTest.TestEndpointConfiguration.class
 })
 class SecurityConfigTest {
     @Autowired
@@ -49,6 +52,14 @@ class SecurityConfigTest {
     @Test
     void permitsDocumentedAuthenticationRoute() throws Exception {
         mockMvc.perform(get("/api/v1/auth/ping")).andExpect(status().isOk());
+    }
+
+    @TestConfiguration(proxyBeanMethods = false)
+    static class TestEndpointConfiguration {
+        @Bean
+        TestEndpoint testEndpoint() {
+            return new TestEndpoint();
+        }
     }
 
     @RestController
