@@ -46,6 +46,8 @@ The Java 17 Maven/Spring Boot foundation currently includes:
 - Vehicle ownership enforcement for every expense endpoint.
 - Reminder creation, retrieval, update, completion, and soft deletion.
 - Vehicle ownership enforcement for every reminder endpoint.
+- Authenticated device registration, FCM-token updates, and device deletion.
+- User ownership enforcement for every device endpoint.
 - Microsoft SQL Server persistence.
 - Flyway schema migrations.
 - Hibernate schema validation.
@@ -62,7 +64,7 @@ Local verification has completed successfully with:
 ./mvnw clean verify
 
 BUILD SUCCESS
-Tests run: 88
+Tests run: 95
 Failures: 0
 Errors: 0
 Skipped: 0
@@ -82,9 +84,10 @@ Docker / Testcontainers
 
 Country/Currency Foundation, Vehicle Management, Vehicle-specific ownership protection,
 Fuel Tracking CRUD with ownership protection, Maintenance CRUD with ownership protection,
-Expense CRUD with ownership protection, and Reminder CRUD and completion with ownership
-protection are implemented and locally verified. Fuel Calculations, reminder scheduling and
-notifications, Statistics, Dashboard, and Energy Tracking are not implemented yet.
+Expense CRUD with ownership protection, Reminder CRUD and completion with ownership
+protection, and Device Management are implemented and locally verified. Fuel Calculations,
+reminder scheduling and notifications, Statistics, Dashboard, and Energy Tracking are not
+implemented yet.
 
 LOCAL email verification is implemented and locally verified. The provider-neutral SMTP
 adapter is implemented and automated-test covered. Real SMTP delivery remains
@@ -268,7 +271,7 @@ Required tables:
 - [x] `maintenance_records`
 - [x] `expenses`
 - [x] `reminders`
-- [ ] `devices`
+- [x] `devices`
 
 All schema changes must be performed through Flyway migrations.
 Test Any migration you created 
@@ -762,12 +765,12 @@ these vehicle fields.
 
 # 24. Device Management
 
-- [ ] Create Device Entity
-- [ ] Create Device Repository
-- [ ] Create Device DTOs
-- [ ] Register Device
-- [ ] Update FCM Token
-- [ ] Delete Device
+- [x] Create Device Entity
+- [x] Create Device Repository
+- [x] Create Device DTOs
+- [x] Register Device
+- [x] Update FCM Token
+- [x] Delete Device
 
 ---
 
@@ -882,6 +885,10 @@ reminders.target_mileage
 devices.user_id
 devices.fcm_token
 ```
+
+The Device Management indexes for `devices.user_id` and `devices.fcm_token` are implemented
+and verified. Complete Required V1 Indexes remains incomplete until the required indexes for
+every V1 feature are implemented and verified.
 
 ---
 
@@ -1036,7 +1043,7 @@ Current verified baseline:
 
 ```text
 BUILD SUCCESS
-Tests run: 88
+Tests run: 95
 Failures: 0
 Errors: 0
 Skipped: 0
@@ -1089,7 +1096,7 @@ before its own checklist items are marked complete.
 - [x] Maintenance
 - [x] Expenses
 - [x] Reminders
-- [ ] Device Management
+- [x] Device Management
 - [ ] Firebase Push Notifications
 - [ ] Reminder Scheduler
 - [ ] Statistics
