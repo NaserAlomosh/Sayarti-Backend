@@ -18,14 +18,24 @@ import org.springframework.context.annotation.Conditional;
 @EnableConfigurationProperties(FirebaseProperties.class)
 @Conditional(FirebaseConfiguredCondition.class)
 public class FirebaseConfiguration {
+    static final String APP_NAME = "sayarti";
+
     @Bean
     FirebaseApp firebaseApp(FirebaseProperties properties) throws IOException {
-        GoogleCredentials credentials = loadCredentials(properties.serviceAccountPath());
-        FirebaseOptions options = FirebaseOptions.builder()
-                .setProjectId(((ServiceAccountCredentials) credentials).getProjectId())
-                .setCredentials(credentials)
-                .build();
-        return FirebaseApp.initializeApp(options, "sayarti");
+        synchronized (FirebaseApp.class) {
+            for (FirebaseApp existingApp : FirebaseApp.getApps()) {
+                if (APP_NAME.equals(existingApp.getName())) {
+                    return existingApp;
+                }
+            }
+
+            GoogleCredentials credentials = loadCredentials(properties.serviceAccountPath());
+            FirebaseOptions options = FirebaseOptions.builder()
+                    .setProjectId(((ServiceAccountCredentials) credentials).getProjectId())
+                    .setCredentials(credentials)
+                    .build();
+            return FirebaseApp.initializeApp(options, APP_NAME);
+        }
     }
 
     @Bean
