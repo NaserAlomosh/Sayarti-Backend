@@ -77,10 +77,15 @@ class FuelRecordIntegrationTest extends AbstractIntegrationTest {
                 .andExpect(status().isUnprocessableEntity())
                 .andExpect(jsonPath("$.error.code").value("FUEL_NOT_SUPPORTED_FOR_VEHICLE"));
         UUID gasoline = vehicle(session, "GASOLINE", 10000);
-        for (String replacement : new String[] {"\"quantityLiters\":0",
-                "\"quantityLiters\":-1", "\"pricePerLiter\":0", "\"pricePerLiter\":-1"}) {
-            String body = createBody(10000, "USD").replace("\"quantityLiters\":45.5", replacement)
-                    .replace("\"pricePerLiter\":0.82", replacement);
+        for (String body : new String[] {
+                createBody(10000, "USD").replace("\"quantityLiters\":45.5",
+                        "\"quantityLiters\":0"),
+                createBody(10000, "USD").replace("\"quantityLiters\":45.5",
+                        "\"quantityLiters\":-1"),
+                createBody(10000, "USD").replace("\"pricePerLiter\":0.82",
+                        "\"pricePerLiter\":0"),
+                createBody(10000, "USD").replace("\"pricePerLiter\":0.82",
+                        "\"pricePerLiter\":-1")}) {
             mvc.perform(post(url(gasoline)).header("Authorization", bearer(session))
                             .contentType(MediaType.APPLICATION_JSON).content(body))
                     .andExpect(status().isBadRequest());
@@ -110,6 +115,8 @@ class FuelRecordIntegrationTest extends AbstractIntegrationTest {
         UUID recordId = recordId(create(owner, vehicleId, createBody(10000, "USD"))
                 .andReturn().getResponse().getContentAsString());
         create(other, vehicleId, createBody(10000, "USD")).andExpect(status().isNotFound());
+        mvc.perform(get(url(vehicleId)).header("Authorization", bearer(other)))
+                .andExpect(status().isNotFound());
         mvc.perform(get(url(vehicleId) + "/" + recordId).header("Authorization", bearer(other)))
                 .andExpect(status().isNotFound());
         mvc.perform(patch(url(vehicleId) + "/" + recordId).header("Authorization", bearer(other))
@@ -117,6 +124,35 @@ class FuelRecordIntegrationTest extends AbstractIntegrationTest {
                 .andExpect(status().isNotFound());
         mvc.perform(delete(url(vehicleId) + "/" + recordId)
                         .header("Authorization", bearer(other))).andExpect(status().isNotFound());
+    }
+
+    @Test
+    void missingVehicleAndFuelRecordUseNotFoundSemantics() throws Exception {
+        Session session = session("missing-fuel@example.com");
+        UUID missingVehicle = UUID.randomUUID();
+        create(session, missingVehicle, createBody(10000, "USD"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.error.code").value("VEHICLE_NOT_FOUND"));
+        mvc.perform(get(url(missingVehicle)).header("Authorization", bearer(session)))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.error.code").value("VEHICLE_NOT_FOUND"));
+
+        UUID vehicleId = vehicle(session, "GASOLINE", 10000);
+        UUID missingRecord = UUID.randomUUID();
+        mvc.perform(get(url(vehicleId) + "/" + missingRecord)
+                        .header("Authorization", bearer(session)))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.error.code").value("FUEL_RECORD_NOT_FOUND"));
+        mvc.perform(patch(url(vehicleId) + "/" + missingRecord)
+                        .header("Authorization", bearer(session))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"pricePerLiter\":1}"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.error.code").value("FUEL_RECORD_NOT_FOUND"));
+        mvc.perform(delete(url(vehicleId) + "/" + missingRecord)
+                        .header("Authorization", bearer(session)))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.error.code").value("FUEL_RECORD_NOT_FOUND"));
     }
 
     @Test
