@@ -24,6 +24,8 @@ class FirebaseConfigurationTest {
     @Test
     void constructsFirebaseAppAndMessagingFromServiceAccountFile() throws Exception {
         Path credentialFile = writeValidServiceAccount();
+        boolean appAlreadyExisted = FirebaseApp.getApps().stream()
+                .anyMatch(candidate -> FirebaseConfiguration.APP_NAME.equals(candidate.getName()));
 
         FirebaseApp app = new FirebaseConfiguration()
                 .firebaseApp(new FirebaseProperties(credentialFile.toString()));
@@ -31,8 +33,14 @@ class FirebaseConfigurationTest {
             assertThat(app.getOptions().getProjectId()).isEqualTo("test-project");
             assertThat(new FirebaseConfiguration().firebaseMessaging(app))
                     .isInstanceOf(FirebaseMessaging.class);
+            assertThat(new FirebaseConfiguration()
+                    .firebaseApp(new FirebaseProperties(temporaryDirectory
+                            .resolve("not-needed-when-app-exists.json").toString())))
+                    .isSameAs(app);
         } finally {
-            app.delete();
+            if (!appAlreadyExisted) {
+                app.delete();
+            }
         }
     }
 
@@ -75,6 +83,19 @@ class FirebaseConfigurationTest {
         Files.writeString(invalid, "{}");
         assertThat(matches(condition, invalid.toString())).isFalse();
         assertThat(matches(condition, writeValidServiceAccount().toString())).isTrue();
+    }
+
+    @Test
+    void conditionCanDisableFirebaseDespiteAValidCredentialPath() throws Exception {
+        FirebaseConfiguredCondition condition = new FirebaseConfiguredCondition();
+        MockEnvironment environment = new MockEnvironment()
+                .withProperty("sayarti.firebase.enabled", "false")
+                .withProperty("sayarti.firebase.service-account-path",
+                        writeValidServiceAccount().toString());
+        ConditionContext context = mock(ConditionContext.class);
+        when(context.getEnvironment()).thenReturn(environment);
+
+        assertThat(condition.matches(context, null)).isFalse();
     }
 
     private boolean matches(FirebaseConfiguredCondition condition, String path) {

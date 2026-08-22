@@ -6,6 +6,10 @@ import org.springframework.core.type.AnnotatedTypeMetadata;
 final class FirebaseConfiguredCondition implements Condition {
     @Override
     public boolean matches(ConditionContext context, AnnotatedTypeMetadata metadata) {
+        if (!context.getEnvironment().getProperty(
+                "sayarti.firebase.enabled", Boolean.class, true)) {
+            return false;
+        }
         String path = context.getEnvironment().getProperty(
                 "sayarti.firebase.service-account-path");
         try {
