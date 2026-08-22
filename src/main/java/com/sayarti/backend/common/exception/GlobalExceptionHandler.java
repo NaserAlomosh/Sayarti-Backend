@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.validation.FieldError;
@@ -40,6 +41,13 @@ public class GlobalExceptionHandler {
                 -> details.put(violation.getPropertyPath().toString(), violation.getMessage()));
         return response(HttpStatus.BAD_REQUEST, ErrorCode.VALIDATION_ERROR,
                 "Request validation failed", details);
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    ResponseEntity<ErrorResponse> handleHttpMessageNotReadable(
+            HttpMessageNotReadableException exception) {
+        return response(HttpStatus.BAD_REQUEST, ErrorCode.VALIDATION_ERROR,
+                "Request body is malformed or contains an invalid value", null);
     }
 
     @ExceptionHandler(ApiException.class)
