@@ -1,5 +1,6 @@
 package com.sayarti.backend.common.exception;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -8,6 +9,8 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -15,6 +18,7 @@ import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 class GlobalExceptionHandlerTest {
     private MockMvc mockMvc;
@@ -45,6 +49,16 @@ class GlobalExceptionHandlerTest {
         mockMvc.perform(post("/test/missing"))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.error.code").value("USER_NOT_FOUND"));
+    }
+
+    @Test
+    void mapsMissingStaticResourceToNotFound() {
+        var response = new GlobalExceptionHandler().handleNoResourceFound(
+                new NoResourceFoundException(HttpMethod.GET, "/missing"));
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().error().code()).isEqualTo("RESOURCE_NOT_FOUND");
     }
 
     @RestController
