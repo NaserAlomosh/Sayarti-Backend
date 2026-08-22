@@ -61,9 +61,7 @@ JWT_REFRESH_EXPIRATION=
 
 GOOGLE_CLIENT_ID=
 
-FIREBASE_PROJECT_ID=
-FIREBASE_CLIENT_EMAIL=
-FIREBASE_PRIVATE_KEY=
+FIREBASE_SERVICE_ACCOUNT_PATH=
 
 ALLOWED_ORIGINS=
 ```
@@ -472,12 +470,10 @@ The Firebase project may use the same underlying Google Cloud project as Sayarti
 
 - [ ] Required from project owner: valid Firebase Admin credentials and real-device delivery verification
 
-## Environment Variables
+## Environment Variable
 
 ```env
-FIREBASE_PROJECT_ID=
-FIREBASE_CLIENT_EMAIL=
-FIREBASE_PRIVATE_KEY=
+FIREBASE_SERVICE_ACCOUNT_PATH=
 ```
 
 ## Required For
@@ -494,45 +490,27 @@ Project Settings
 → Firebase Admin SDK
 ```
 
-Generate a service account credential.
-
-The generated credential contains values including:
-
-```text
-project_id
-client_email
-private_key
-```
-
-## Mapping
-
-```text
-project_id   → FIREBASE_PROJECT_ID
-client_email → FIREBASE_CLIENT_EMAIL
-private_key  → FIREBASE_PRIVATE_KEY
-```
+Choose **Generate new private key** and download the Firebase Admin SDK service-account
+JSON file.
 
 ## Private Key Handling
 
-Private keys commonly contain newline characters.
+Store the downloaded JSON outside the repository with permissions restricted to the backend
+process and its operator. Set `FIREBASE_SERVICE_ACCOUNT_PATH` to that file's absolute path in
+the local, ignored `.env` file or in the process environment. Never commit or copy the JSON
+file into this repository.
 
-When stored as environment variables, the backend must correctly restore escaped `\n` sequences if necessary.
+The backend opens that file and passes its stream directly to
+`GoogleCredentials.fromStream(...)`; it does not map credential fields to separate environment
+variables. Firebase beans are enabled only when the path identifies a readable, valid
+service-account credential. A missing, blank, nonexistent, unreadable, or invalid file leaves
+the application startable with the unavailable notification-provider fallback. Notification
+attempts then fail safely rather than pretending Firebase is configured.
 
-The backend reads only the three environment variables above. It builds the service-account
-credential in memory and converts literal escaped newline sequences (`\\n`) in
-`FIREBASE_PRIVATE_KEY` back to PEM newlines. Do not add a service-account JSON file to the
-repository.
-
-All three values must be present for Firebase beans to be enabled. When they are absent, the
-application can still start and notification attempts fail safely without contacting Firebase
-or deleting registered devices. The exact configuration still required from the project owner is:
-
-1. The Firebase project ID in `FIREBASE_PROJECT_ID`.
-2. The Admin SDK service-account email in `FIREBASE_CLIENT_EMAIL`.
-3. The complete PEM private key in `FIREBASE_PRIVATE_KEY`, preferably stored in a deployment
-   secrets manager; escaped newlines are supported.
-
-Do not commit the downloaded service account JSON file.
+For production, mount the credential using the hosting platform's secret-file or workload
+credential mechanism and set `FIREBASE_SERVICE_ACCOUNT_PATH` to the mounted file. Do not rely
+on a developer workstation or Desktop path. Follow the platform's access-control, rotation,
+and audit guidance.
 
 ## Verification
 
@@ -542,7 +520,7 @@ Do not commit the downloaded service account JSON file.
 - [ ] Android receives it.
 - [ ] iOS receives it after APNs configuration is complete.
 
-Automated tests use generated test credential material and mocked notification-provider
+Automated tests use temporary generated test credential files and mocked notification-provider
 dependencies; they never send a real Firebase message. Real Firebase delivery has therefore
 not been verified and must remain pending until the owner completes every applicable step above.
 

@@ -1,12 +1,14 @@
 package com.sayarti.backend.notification.firebase;
 
 import com.google.auth.oauth2.GoogleCredentials;
+import com.google.auth.oauth2.ServiceAccountCredentials;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.messaging.FirebaseMessaging;
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -18,18 +20,9 @@ import org.springframework.context.annotation.Conditional;
 public class FirebaseConfiguration {
     @Bean
     FirebaseApp firebaseApp(FirebaseProperties properties) throws IOException {
-        requireConfigured(properties.projectId(), "FIREBASE_PROJECT_ID");
-        requireConfigured(properties.clientEmail(), "FIREBASE_CLIENT_EMAIL");
-        requireConfigured(properties.privateKey(), "FIREBASE_PRIVATE_KEY");
-
-        String serviceAccount = "{\"type\":\"service_account\",\"project_id\":\""
-                + jsonEscape(properties.projectId()) + "\",\"client_email\":\""
-                + jsonEscape(properties.clientEmail()) + "\",\"private_key\":\""
-                + jsonEscape(properties.normalizedPrivateKey()) + "\"}";
-        GoogleCredentials credentials = GoogleCredentials.fromStream(
-                new ByteArrayInputStream(serviceAccount.getBytes(StandardCharsets.UTF_8)));
+        GoogleCredentials credentials = loadCredentials(properties.serviceAccountPath());
         FirebaseOptions options = FirebaseOptions.builder()
-                .setProjectId(properties.projectId())
+                .setProjectId(((ServiceAccountCredentials) credentials).getProjectId())
                 .setCredentials(credentials)
                 .build();
         return FirebaseApp.initializeApp(options, "sayarti");
@@ -40,16 +33,17 @@ public class FirebaseConfiguration {
         return FirebaseMessaging.getInstance(firebaseApp);
     }
 
-    private static void requireConfigured(String value, String environmentVariable) {
-        if (value == null || value.isBlank()) {
-            throw new IllegalStateException(environmentVariable + " must be configured");
+    static GoogleCredentials loadCredentials(String serviceAccountPath) throws IOException {
+        if (serviceAccountPath == null || serviceAccountPath.isBlank()) {
+            throw new IOException("Firebase service-account path is not configured");
         }
-    }
-
-    private static String jsonEscape(String value) {
-        return value.replace("\\", "\\\\")
-                .replace("\"", "\\\"")
-                .replace("\r", "\\r")
-                .replace("\n", "\\n");
+        Path path = Path.of(serviceAccountPath);
+        try (InputStream stream = Files.newInputStream(path)) {
+            GoogleCredentials credentials = GoogleCredentials.fromStream(stream);
+            if (!(credentials instanceof ServiceAccountCredentials)) {
+                throw new IOException("Firebase credential file is not a service account");
+            }
+            return credentials;
+        }
     }
 }
