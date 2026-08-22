@@ -35,6 +35,8 @@ The Java 17 Maven/Spring Boot foundation currently includes:
 - Current-user resolution.
 - Backend-verified Google ID-token authentication.
 - User profile retrieval, update, and soft deletion.
+- Vehicle creation, retrieval, update, mileage updates, and soft deletion.
+- Vehicle-specific ownership enforcement for every vehicle endpoint.
 - Microsoft SQL Server persistence.
 - Flyway schema migrations.
 - Hibernate schema validation.
@@ -51,7 +53,7 @@ Local verification has completed successfully with:
 ./mvnw clean verify
 
 BUILD SUCCESS
-Tests run: 28
+Tests run: 37
 Failures: 0
 Errors: 0
 Skipped: 0
@@ -69,7 +71,9 @@ Docker / Testcontainers
 → BUILD SUCCESS
 ```
 
-No Vehicle, Fuel, Maintenance, Expense, Reminder, Statistics, Dashboard, or other V1 vehicle-domain feature has been implemented yet.
+Vehicle Management and Vehicle-specific ownership protection are implemented and locally
+verified. Fuel, Maintenance, Expense, Reminder, Statistics, Dashboard, and Energy Tracking
+are not implemented yet.
 
 LOCAL email verification is implemented and locally verified. The provider-neutral SMTP
 adapter is implemented and automated-test covered. Real SMTP delivery remains
@@ -246,7 +250,7 @@ Required tables:
 - [x] `users`
 - [x] `refresh_tokens`
 - [x] `email_verification_otps`
-- [ ] `vehicles`
+- [x] `vehicles`
 - [ ] `fuel_records`
 - [ ] `maintenance_records`
 - [ ] `expenses`
@@ -648,24 +652,28 @@ Account deletion uses the existing soft-delete strategy, revokes active refresh 
 
 # 17. Vehicle Management
 
-- [ ] Create Vehicle Entity
-- [ ] Create Vehicle Repository
-- [ ] Create Vehicle DTOs
-- [ ] Create Vehicle — `POST /api/v1/vehicles`
-- [ ] Get User Vehicles — `GET /api/v1/vehicles`
-- [ ] Get Vehicle Details — `GET /api/v1/vehicles/{vehicleId}`
-- [ ] Update Vehicle — `PATCH /api/v1/vehicles/{vehicleId}`
-- [ ] Update Mileage — `PATCH /api/v1/vehicles/{vehicleId}/mileage`
-- [ ] Delete Vehicle — `DELETE /api/v1/vehicles/{vehicleId}`
+- [x] Create Vehicle Entity
+- [x] Create Vehicle Repository
+- [x] Create Vehicle DTOs
+- [x] Create Vehicle — `POST /api/v1/vehicles`
+- [x] Get User Vehicles — `GET /api/v1/vehicles`
+- [x] Get Vehicle Details — `GET /api/v1/vehicles/{vehicleId}`
+- [x] Update Vehicle — `PATCH /api/v1/vehicles/{vehicleId}`
+- [x] Update Mileage — `PATCH /api/v1/vehicles/{vehicleId}/mileage`
+- [x] Delete Vehicle — `DELETE /api/v1/vehicles/{vehicleId}`
 
 Use soft delete.
+
+Vehicle powertrain, fuel-type, fuel-tank, battery-capacity, and estimated-range metadata are
+part of Vehicle Management. Energy Tracking is a future feature and is not implemented by
+these vehicle fields.
 
 ---
 
 # 18. Vehicle Ownership Security
 
-- [ ] Create Vehicle Ownership Validation
-- [ ] Protect Vehicle APIs
+- [x] Create Vehicle Ownership Validation
+- [x] Protect Vehicle APIs
 - [ ] Protect Fuel APIs
 - [ ] Protect Maintenance APIs
 - [ ] Protect Expense APIs
@@ -829,8 +837,8 @@ Use soft delete.
 
 # 35. Soft Delete
 
-- [ ] Implement Vehicle Soft Delete
-- [ ] Exclude Deleted Vehicles
+- [x] Implement Vehicle Soft Delete
+- [x] Exclude Deleted Vehicles
 
 ---
 
@@ -943,15 +951,15 @@ api.version=1.44
 
 ## Vehicle Tests
 
-- [ ] Create Vehicle
-- [ ] Get Vehicles
-- [ ] Get Vehicle
-- [ ] Update Vehicle
-- [ ] Update Mileage
-- [ ] Reject Mileage Decrease
-- [ ] Delete Vehicle
-- [ ] Deleted Vehicle Excluded
-- [ ] Ownership Validation
+- [x] Create Vehicle
+- [x] Get Vehicles
+- [x] Get Vehicle
+- [x] Update Vehicle
+- [x] Update Mileage
+- [x] Reject Mileage Decrease
+- [x] Delete Vehicle
+- [x] Deleted Vehicle Excluded
+- [x] Ownership Validation
 
 ## Fuel Tests
 
@@ -995,7 +1003,7 @@ api.version=1.44
 - [x] Unauthenticated Request
 - [x] Invalid JWT
 - [x] Expired JWT
-- [ ] Cross-User Vehicle Access
+- [x] Cross-User Vehicle Access
 - [ ] Cross-User Fuel Access
 - [ ] Cross-User Maintenance Access
 - [ ] Cross-User Expense Access
@@ -1015,7 +1023,7 @@ Current verified baseline:
 
 ```text
 BUILD SUCCESS
-Tests run: 28
+Tests run: 37
 Failures: 0
 Errors: 0
 Skipped: 0
@@ -1061,8 +1069,8 @@ before its own checklist items are marked complete.
 - [x] Logout
 - [x] Google Authentication
 - [x] User Profile
-- [ ] Vehicle Management
-- [ ] Vehicle Ownership Security
+- [x] Vehicle Management
+- [x] Vehicle Ownership Security
 - [ ] Fuel Tracking
 - [ ] Fuel Calculations
 - [ ] Maintenance
