@@ -73,3 +73,6 @@ sayarti:
     resend-cooldown-seconds: ${EMAIL_OTP_RESEND_COOLDOWN_SECONDS:60}
   firebase:
     service-account-path: ${FIREBASE_SERVICE_ACCOUNT_PATH:}
+  reminder-scheduler:
+    fixed-delay-ms: ${REMINDER_SCHEDULER_INTERVAL_MS:60000}
+    batch-size: ${REMINDER_SCHEDULER_BATCH_SIZE:100}

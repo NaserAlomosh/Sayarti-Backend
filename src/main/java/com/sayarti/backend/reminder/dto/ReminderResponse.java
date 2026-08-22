@@ -8,13 +8,15 @@ import java.util.UUID;
 
 public record ReminderResponse(UUID id, UUID vehicleId, ReminderCategory category, String title,
         String description, ReminderTriggerType triggerType, Instant targetDate,
-        Long targetMileage, boolean completed, Instant completedAt, Instant createdAt,
+        Long targetMileage, boolean completed, Instant completedAt,
+        Instant notificationDeliveredAt, Instant createdAt,
         Instant updatedAt) {
     public static ReminderResponse from(Reminder reminder) {
         return new ReminderResponse(reminder.getId(), reminder.getVehicleId(),
                 reminder.getCategory(), reminder.getTitle(), reminder.getDescription(),
                 reminder.getTriggerType(), reminder.getTargetDate(), reminder.getTargetMileage(),
-                reminder.isCompleted(), reminder.getCompletedAt(), reminder.getCreatedAt(),
+                reminder.isCompleted(), reminder.getCompletedAt(),
+                reminder.getNotificationDeliveredAt(), reminder.getCreatedAt(),
                 reminder.getUpdatedAt());
     }
 }
