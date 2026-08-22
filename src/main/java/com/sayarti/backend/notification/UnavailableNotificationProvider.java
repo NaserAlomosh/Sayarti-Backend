@@ -1,6 +1,6 @@
 package com.sayarti.backend.notification;
 
-class UnavailableNotificationProvider implements NotificationProvider {
+public class UnavailableNotificationProvider implements NotificationProvider {
     @Override
     public void send(String registrationToken, NotificationCommand notification)
             throws NotificationProviderException {

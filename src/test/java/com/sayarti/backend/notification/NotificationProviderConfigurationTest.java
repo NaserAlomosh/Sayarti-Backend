@@ -3,14 +3,16 @@ package com.sayarti.backend.notification;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
+import com.sayarti.autoconfigure.notification.NotificationProviderAutoConfiguration;
 import org.junit.jupiter.api.Test;
+import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 class NotificationProviderConfigurationTest {
     private final ApplicationContextRunner contextRunner = new ApplicationContextRunner()
-            .withUserConfiguration(NotificationProviderConfiguration.class);
+            .withConfiguration(AutoConfigurations.of(NotificationProviderAutoConfiguration.class));
 
     @Test
     void registersUnavailableProviderWhenNoDeliveryProviderExists() {
