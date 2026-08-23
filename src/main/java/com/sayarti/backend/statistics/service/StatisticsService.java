@@ -3,6 +3,7 @@ package com.sayarti.backend.statistics.service;
 import com.sayarti.backend.common.exception.ErrorCode;
 import com.sayarti.backend.common.exception.ResourceNotFoundException;
 import com.sayarti.backend.expense.entity.Expense;
+import com.sayarti.backend.expense.entity.ExpenseCategory;
 import com.sayarti.backend.expense.repository.ExpenseRepository;
 import com.sayarti.backend.fuel.repository.FuelRecordRepository;
 import com.sayarti.backend.fuel.service.FuelCalculator;
@@ -14,6 +15,8 @@ import com.sayarti.backend.security.jwt.AuthenticatedUser;
 import com.sayarti.backend.statistics.dto.CurrencyAverageResponse;
 import com.sayarti.backend.statistics.dto.CurrencyRateResponse;
 import com.sayarti.backend.statistics.dto.CurrencyTotalResponse;
+import com.sayarti.backend.statistics.dto.ExpenseCategoryStatisticsResponse;
+import com.sayarti.backend.statistics.dto.ExpenseStatisticsResponse;
 import com.sayarti.backend.statistics.dto.FuelStatisticsResponse;
 import com.sayarti.backend.statistics.dto.GeneralStatisticsResponse;
 import com.sayarti.backend.statistics.dto.MaintenanceCategoryStatisticsResponse;
@@ -121,12 +124,42 @@ public class StatisticsService {
                 latest == null ? null : latest.getMileageKm(), categories);
     }
 
+    @Transactional(readOnly = true)
+    public ExpenseStatisticsResponse expense(AuthenticatedUser user, UUID vehicleId) {
+        vehicles.findByIdAndUserIdAndDeletedAtIsNull(vehicleId, user.id())
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        ErrorCode.VEHICLE_NOT_FOUND, "Vehicle not found"));
+        var records = expenses
+                .findAllByVehicleIdAndDeletedAtIsNullOrderByExpenseDateDescCreatedAtDescIdDesc(
+                        vehicleId);
+        var latest = records.stream().findFirst().orElse(null);
+
+        Map<ExpenseCategory, List<Expense>> byCategory = new EnumMap<>(ExpenseCategory.class);
+        records.forEach(record -> byCategory.computeIfAbsent(record.getCategory(), ignored ->
+                new java.util.ArrayList<>()).add(record));
+        var categories = byCategory.entrySet().stream()
+                .map(entry -> new ExpenseCategoryStatisticsResponse(entry.getKey(),
+                        entry.getValue().size(), totals(entry.getValue(),
+                                Expense::getCurrencyCode, Expense::getAmount)))
+                .toList();
+
+        return new ExpenseStatisticsResponse(vehicleId, records.size(),
+                totals(records, Expense::getCurrencyCode, Expense::getAmount),
+                averages(records, Expense::getCurrencyCode, Expense::getAmount), categories,
+                latest == null ? null : latest.getExpenseDate());
+    }
+
     private List<CurrencyAverageResponse> averages(List<MaintenanceRecord> records) {
+        return averages(records, MaintenanceRecord::getCurrencyCode, MaintenanceRecord::getCost);
+    }
+
+    private <T> List<CurrencyAverageResponse> averages(List<T> records,
+            Function<T, String> currency, Function<T, BigDecimal> amount) {
         Map<String, BigDecimal> totals = new TreeMap<>();
         Map<String, Long> counts = new TreeMap<>();
         records.forEach(record -> {
-            totals.merge(record.getCurrencyCode(), record.getCost(), BigDecimal::add);
-            counts.merge(record.getCurrencyCode(), 1L, Long::sum);
+            totals.merge(currency.apply(record), amount.apply(record), BigDecimal::add);
+            counts.merge(currency.apply(record), 1L, Long::sum);
         });
         return totals.entrySet().stream().map(entry -> new CurrencyAverageResponse(entry.getKey(),
                 entry.getValue().divide(BigDecimal.valueOf(counts.get(entry.getKey())), 4,
