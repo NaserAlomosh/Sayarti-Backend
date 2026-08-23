@@ -10,7 +10,9 @@ import com.sayarti.backend.maintenance.entity.MaintenanceRecord;
 import com.sayarti.backend.maintenance.repository.MaintenanceRecordRepository;
 import com.sayarti.backend.reminder.repository.ReminderRepository;
 import com.sayarti.backend.security.jwt.AuthenticatedUser;
+import com.sayarti.backend.statistics.dto.CurrencyRateResponse;
 import com.sayarti.backend.statistics.dto.CurrencyTotalResponse;
+import com.sayarti.backend.statistics.dto.FuelStatisticsResponse;
 import com.sayarti.backend.statistics.dto.GeneralStatisticsResponse;
 import com.sayarti.backend.vehicle.entity.Vehicle;
 import com.sayarti.backend.vehicle.repository.VehicleRepository;
@@ -66,6 +68,26 @@ public class StatisticsService {
                 expense.size(), totals(expense, Expense::getCurrencyCode, Expense::getAmount),
                 reminder.stream().filter(value -> !value.isCompleted()).count(),
                 reminder.stream().filter(value -> value.isCompleted()).count());
+    }
+
+    @Transactional(readOnly = true)
+    public FuelStatisticsResponse fuel(AuthenticatedUser user, UUID vehicleId) {
+        vehicles.findByIdAndUserIdAndDeletedAtIsNull(vehicleId, user.id())
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        ErrorCode.VEHICLE_NOT_FOUND, "Vehicle not found"));
+        var records = fuelRecords.findAllByVehicleIdAndDeletedAtIsNull(vehicleId);
+        var result = FuelCalculator.calculate(records, YearMonth.now(ZoneOffset.UTC));
+
+        var costs = result.costs().stream()
+                .map(cost -> new CurrencyTotalResponse(cost.currencyCode(), cost.totalCost()))
+                .toList();
+        var rates = result.costs().stream()
+                .map(cost -> new CurrencyRateResponse(cost.currencyCode(), cost.costPerKm()))
+                .toList();
+
+        return new FuelStatisticsResponse(vehicleId, records.size(), result.totalQuantity(), costs,
+                result.totalDistance(), result.averageKmPerLiter(),
+                result.averageLitersPer100Km(), rates);
     }
 
     private <T> List<CurrencyTotalResponse> totals(List<T> records,
