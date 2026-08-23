@@ -48,6 +48,7 @@ The Java 17 Maven/Spring Boot foundation currently includes:
 - Vehicle ownership enforcement for every reminder endpoint.
 - Authenticated device registration, FCM-token updates, and device deletion.
 - User ownership enforcement for every device endpoint.
+- General vehicle statistics with vehicle ownership enforcement.
 - Microsoft SQL Server persistence.
 - Flyway schema migrations.
 - Hibernate schema validation.
@@ -64,7 +65,7 @@ Local verification has completed successfully with:
 ./mvnw clean verify
 
 BUILD SUCCESS
-Tests run: 95
+Tests run: 123
 Failures: 0
 Errors: 0
 Skipped: 0
@@ -85,9 +86,9 @@ Docker / Testcontainers
 Country/Currency Foundation, Vehicle Management, Vehicle-specific ownership protection,
 Fuel Tracking CRUD with ownership protection, Maintenance CRUD with ownership protection,
 Expense CRUD with ownership protection, Reminder CRUD and completion with ownership
-protection, and Device Management are implemented and locally verified. Fuel Calculations,
-reminder scheduling and notifications, Statistics, Dashboard, and Energy Tracking are not
-implemented yet.
+protection, Device Management, and General Vehicle Statistics with ownership protection are
+implemented and locally verified. Fuel Calculations, Fuel Statistics, Maintenance Statistics,
+Expense Statistics, True Vehicle Cost, Dashboard, and Energy Tracking are not implemented yet.
 
 LOCAL email verification is implemented and locally verified. The provider-neutral SMTP
 adapter is implemented and automated-test covered. Real SMTP delivery remains
@@ -692,7 +693,7 @@ these vehicle fields.
 - [x] Protect Maintenance APIs
 - [x] Protect Expense APIs
 - [x] Protect Reminder APIs
-- [ ] Protect Statistics APIs
+- [x] Protect Statistics APIs
 - [ ] Protect Dashboard APIs
 
 ---
@@ -798,8 +799,8 @@ these vehicle fields.
 
 # 27. Statistics
 
-- [ ] Create Statistics Service
-- [ ] Create General Statistics Endpoint
+- [x] Create Statistics Service
+- [x] Create General Statistics Endpoint
 
 ---
 
@@ -1010,7 +1011,7 @@ api.version=1.44
 
 ## Statistics Tests
 
-- [ ] General Statistics
+- [x] General Statistics
 - [ ] Fuel Statistics
 - [ ] Maintenance Statistics
 - [ ] Expense Statistics
@@ -1041,7 +1042,7 @@ Current verified baseline:
 
 ```text
 BUILD SUCCESS
-Tests run: 95
+Tests run: 123
 Failures: 0
 Errors: 0
 Skipped: 0
@@ -1097,7 +1098,7 @@ before its own checklist items are marked complete.
 - [x] Device Management
 - [ ] Firebase Push Notifications
 - [ ] Reminder Scheduler
-- [ ] Statistics
+- [x] Statistics
 - [ ] True Vehicle Cost
 - [ ] Dashboard
 - [ ] Recent Activity
