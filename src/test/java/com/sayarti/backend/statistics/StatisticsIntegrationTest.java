@@ -153,7 +153,7 @@ class StatisticsIntegrationTest extends AbstractIntegrationTest {
             String currency) throws Exception {
         return mvc.perform(post(fuelUrl(vehicle)).header("Authorization", bearer(session))
                         .contentType(MediaType.APPLICATION_JSON).content("""
-                        {"odometerKm":54000,"quantityLiters":%s,"pricePerLiter":%s,
+                        {"odometerKm":54321,"quantityLiters":%s,"pricePerLiter":%s,
                          "currencyCode":"%s","filledAt":"2026-08-01T00:00:00Z","fullTank":true}
                         """.formatted(quantity, price, currency))).andExpect(status().isCreated())
                 .andReturn().getResponse().getContentAsString();
