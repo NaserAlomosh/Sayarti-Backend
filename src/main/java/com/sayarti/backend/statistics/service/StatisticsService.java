@@ -6,20 +6,25 @@ import com.sayarti.backend.expense.entity.Expense;
 import com.sayarti.backend.expense.repository.ExpenseRepository;
 import com.sayarti.backend.fuel.repository.FuelRecordRepository;
 import com.sayarti.backend.fuel.service.FuelCalculator;
+import com.sayarti.backend.maintenance.entity.MaintenanceCategory;
 import com.sayarti.backend.maintenance.entity.MaintenanceRecord;
 import com.sayarti.backend.maintenance.repository.MaintenanceRecordRepository;
 import com.sayarti.backend.reminder.repository.ReminderRepository;
 import com.sayarti.backend.security.jwt.AuthenticatedUser;
+import com.sayarti.backend.statistics.dto.CurrencyAverageResponse;
 import com.sayarti.backend.statistics.dto.CurrencyRateResponse;
 import com.sayarti.backend.statistics.dto.CurrencyTotalResponse;
 import com.sayarti.backend.statistics.dto.FuelStatisticsResponse;
 import com.sayarti.backend.statistics.dto.GeneralStatisticsResponse;
+import com.sayarti.backend.statistics.dto.MaintenanceCategoryStatisticsResponse;
+import com.sayarti.backend.statistics.dto.MaintenanceStatisticsResponse;
 import com.sayarti.backend.vehicle.entity.Vehicle;
 import com.sayarti.backend.vehicle.repository.VehicleRepository;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.YearMonth;
 import java.time.ZoneOffset;
+import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -88,6 +93,44 @@ public class StatisticsService {
         return new FuelStatisticsResponse(vehicleId, records.size(), result.totalQuantity(), costs,
                 result.totalDistance(), result.averageKmPerLiter(),
                 result.averageLitersPer100Km(), rates);
+    }
+
+    @Transactional(readOnly = true)
+    public MaintenanceStatisticsResponse maintenance(AuthenticatedUser user, UUID vehicleId) {
+        vehicles.findByIdAndUserIdAndDeletedAtIsNull(vehicleId, user.id())
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        ErrorCode.VEHICLE_NOT_FOUND, "Vehicle not found"));
+        var records = maintenanceRecords
+                .findAllByVehicleIdAndDeletedAtIsNullOrderByServiceDateDescCreatedAtDescIdDesc(
+                        vehicleId);
+        var latest = records.stream().findFirst().orElse(null);
+
+        Map<MaintenanceCategory, List<MaintenanceRecord>> byCategory = new EnumMap<>(
+                MaintenanceCategory.class);
+        records.forEach(record -> byCategory.computeIfAbsent(record.getCategory(), ignored ->
+                new java.util.ArrayList<>()).add(record));
+        var categories = byCategory.entrySet().stream()
+                .map(entry -> new MaintenanceCategoryStatisticsResponse(entry.getKey(),
+                        entry.getValue().size(), totals(entry.getValue(),
+                                MaintenanceRecord::getCurrencyCode, MaintenanceRecord::getCost)))
+                .toList();
+
+        return new MaintenanceStatisticsResponse(vehicleId, records.size(),
+                totals(records, MaintenanceRecord::getCurrencyCode, MaintenanceRecord::getCost),
+                averages(records), latest == null ? null : latest.getServiceDate(),
+                latest == null ? null : latest.getMileageKm(), categories);
+    }
+
+    private List<CurrencyAverageResponse> averages(List<MaintenanceRecord> records) {
+        Map<String, BigDecimal> totals = new TreeMap<>();
+        Map<String, Long> counts = new TreeMap<>();
+        records.forEach(record -> {
+            totals.merge(record.getCurrencyCode(), record.getCost(), BigDecimal::add);
+            counts.merge(record.getCurrencyCode(), 1L, Long::sum);
+        });
+        return totals.entrySet().stream().map(entry -> new CurrencyAverageResponse(entry.getKey(),
+                entry.getValue().divide(BigDecimal.valueOf(counts.get(entry.getKey())), 4,
+                        RoundingMode.HALF_UP))).toList();
     }
 
     private <T> List<CurrencyTotalResponse> totals(List<T> records,

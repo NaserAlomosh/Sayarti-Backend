@@ -4,6 +4,7 @@ import com.sayarti.backend.common.response.ApiResponse;
 import com.sayarti.backend.security.jwt.AuthenticatedUser;
 import com.sayarti.backend.statistics.dto.FuelStatisticsResponse;
 import com.sayarti.backend.statistics.dto.GeneralStatisticsResponse;
+import com.sayarti.backend.statistics.dto.MaintenanceStatisticsResponse;
 import com.sayarti.backend.statistics.service.StatisticsService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -68,5 +69,27 @@ public class StatisticsController {
             @PathVariable UUID vehicleId,
             @AuthenticationPrincipal AuthenticatedUser user) {
         return ApiResponse.success(service.fuel(user, vehicleId));
+    }
+
+    @GetMapping("/maintenance")
+    @Operation(summary = "Get vehicle maintenance statistics", description = "Aggregates only "
+            + "active, non-soft-deleted maintenance records for the authenticated user's active "
+            + "vehicle. Total and average costs remain separated by original currency; no "
+            + "conversion occurs. The category breakdown follows maintenance-category declaration "
+            + "order. Empty histories return zero records, empty currency/category arrays, and null "
+            + "latest date and mileage. Missing, deleted, and other users' vehicles all return "
+            + "VEHICLE_NOT_FOUND to hide resource existence.")
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200",
+            description = "Maintenance statistics response, including empty and multi-currency histories",
+            content = @Content(schema = @Schema(implementation = MaintenanceStatisticsResponse.class)))
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401",
+            description = "Bearer authentication is missing or invalid")
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404",
+            description = "VEHICLE_NOT_FOUND for missing, deleted, or inaccessible vehicles")
+    public ApiResponse<MaintenanceStatisticsResponse> getMaintenance(
+            @Parameter(description = "Owned active vehicle UUID", required = true)
+            @PathVariable UUID vehicleId,
+            @AuthenticationPrincipal AuthenticatedUser user) {
+        return ApiResponse.success(service.maintenance(user, vehicleId));
     }
 }
