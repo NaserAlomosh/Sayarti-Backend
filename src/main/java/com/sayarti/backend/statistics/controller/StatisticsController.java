@@ -2,6 +2,7 @@ package com.sayarti.backend.statistics.controller;
 
 import com.sayarti.backend.common.response.ApiResponse;
 import com.sayarti.backend.security.jwt.AuthenticatedUser;
+import com.sayarti.backend.statistics.dto.ExpenseStatisticsResponse;
 import com.sayarti.backend.statistics.dto.FuelStatisticsResponse;
 import com.sayarti.backend.statistics.dto.GeneralStatisticsResponse;
 import com.sayarti.backend.statistics.dto.MaintenanceStatisticsResponse;
@@ -91,5 +92,27 @@ public class StatisticsController {
             @PathVariable UUID vehicleId,
             @AuthenticationPrincipal AuthenticatedUser user) {
         return ApiResponse.success(service.maintenance(user, vehicleId));
+    }
+
+    @GetMapping("/expenses")
+    @Operation(summary = "Get vehicle expense statistics", description = "Aggregates only active, "
+            + "non-soft-deleted expense records for the authenticated user's active vehicle. Total "
+            + "and average amounts remain separated by original currency; no conversion occurs. "
+            + "Currency codes are ordered lexicographically and the category breakdown follows "
+            + "expense-category declaration order. Empty histories return zero records, empty "
+            + "currency/category arrays, and a null latest date. Missing, deleted, and other users' "
+            + "vehicles all return VEHICLE_NOT_FOUND to hide resource existence.")
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200",
+            description = "Expense statistics response, including empty and multi-currency histories",
+            content = @Content(schema = @Schema(implementation = ExpenseStatisticsResponse.class)))
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401",
+            description = "Bearer authentication is missing or invalid")
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404",
+            description = "VEHICLE_NOT_FOUND for missing, deleted, or inaccessible vehicles")
+    public ApiResponse<ExpenseStatisticsResponse> getExpenses(
+            @Parameter(description = "Owned active vehicle UUID", required = true)
+            @PathVariable UUID vehicleId,
+            @AuthenticationPrincipal AuthenticatedUser user) {
+        return ApiResponse.success(service.expense(user, vehicleId));
     }
 }
