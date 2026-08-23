@@ -49,6 +49,7 @@ The Java 17 Maven/Spring Boot foundation currently includes:
 - Authenticated device registration, FCM-token updates, and device deletion.
 - User ownership enforcement for every device endpoint.
 - General vehicle statistics with vehicle ownership enforcement.
+- Fuel statistics with vehicle ownership enforcement.
 - Microsoft SQL Server persistence.
 - Flyway schema migrations.
 - Hibernate schema validation.
@@ -65,7 +66,7 @@ Local verification has completed successfully with:
 ./mvnw clean verify
 
 BUILD SUCCESS
-Tests run: 123
+Tests run: 126
 Failures: 0
 Errors: 0
 Skipped: 0
@@ -86,9 +87,10 @@ Docker / Testcontainers
 Country/Currency Foundation, Vehicle Management, Vehicle-specific ownership protection,
 Fuel Tracking CRUD with ownership protection, Maintenance CRUD with ownership protection,
 Expense CRUD with ownership protection, Reminder CRUD and completion with ownership
-protection, Device Management, and General Vehicle Statistics with ownership protection are
-implemented and locally verified. Fuel Calculations, Fuel Statistics, Maintenance Statistics,
-Expense Statistics, True Vehicle Cost, Dashboard, and Energy Tracking are not implemented yet.
+protection, Device Management, General Vehicle Statistics with ownership protection, and Fuel
+Statistics with ownership protection are implemented and locally verified. Fuel Calculations,
+Maintenance Statistics, Expense Statistics, True Vehicle Cost, Dashboard, and Energy Tracking
+are not implemented yet.
 
 LOCAL email verification is implemented and locally verified. The provider-neutral SMTP
 adapter is implemented and automated-test covered. Real SMTP delivery remains
@@ -806,7 +808,7 @@ these vehicle fields.
 
 # 28. Fuel Statistics
 
-- [ ] Create Fuel Statistics Endpoint
+- [x] Create Fuel Statistics Endpoint
 
 ---
 
@@ -1012,7 +1014,7 @@ api.version=1.44
 ## Statistics Tests
 
 - [x] General Statistics
-- [ ] Fuel Statistics
+- [x] Fuel Statistics
 - [ ] Maintenance Statistics
 - [ ] Expense Statistics
 - [ ] True Vehicle Cost
@@ -1042,7 +1044,7 @@ Current verified baseline:
 
 ```text
 BUILD SUCCESS
-Tests run: 123
+Tests run: 126
 Failures: 0
 Errors: 0
 Skipped: 0
@@ -1099,6 +1101,7 @@ before its own checklist items are marked complete.
 - [ ] Firebase Push Notifications
 - [ ] Reminder Scheduler
 - [x] Statistics
+- [x] Fuel Statistics
 - [ ] True Vehicle Cost
 - [ ] Dashboard
 - [ ] Recent Activity
