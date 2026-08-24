@@ -825,21 +825,25 @@ soft-delete, ordering, and multi-currency behavior.
 
 - [x] Configure Firebase Admin SDK
 - [x] Create Notification Service
-- [ ] Send Notification To Device
-- [ ] Send Notification To User Devices
+- [x] Send Notification To Device
+- [x] Send Notification To User Devices
 - [ ] License Expiration Notification
 - [ ] Insurance Expiration Notification
-- [ ] Maintenance Notification
-- [ ] Mileage Reminder Notification
-- [ ] Custom Reminder Notification
+- [x] Maintenance Notification
+- [x] Mileage Reminder Notification
+- [x] Custom Reminder Notification
 
 The Firebase infrastructure is implemented and locally automated-test covered: valid service
 account configuration creates the Firebase Admin components, the provider-neutral notification
-service supports one device and all registered devices for a user, permanently invalid tokens are
-removed, and an unavailable-provider fallback fails safely when Firebase is not configured.
-Provider tests construct Firebase messages without network access. The delivery-related items
-above remain incomplete because no repository evidence verifies delivery to a real Firebase
-project/device. License- and insurance-expiration notification completion is also not established.
+service sends to one device or fans out to all registered devices for a user, permanently invalid
+tokens are removed, and an unavailable-provider fallback fails safely when Firebase is not
+configured. Provider tests verify Firebase message construction without making network calls.
+The reminder scheduler uses this service for date-based custom reminders and mileage-based
+maintenance reminders, with tests covering successful, partial, failed, retried, and duplicate-
+prevented delivery. License- and insurance-expiration notifications remain incomplete because
+there is no category-specific processing or test coverage establishing their required behavior.
+Real Firebase project/device delivery also remains an external verification item documented in
+`SECRETS_SETUP.md`; the completed backend delivery paths do not claim that verification.
 
 ---
 
