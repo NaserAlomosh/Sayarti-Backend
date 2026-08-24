@@ -1,6 +1,7 @@
 package com.sayarti.backend.vehicle.controller;
 
 import com.sayarti.backend.common.response.ApiResponse;
+import com.sayarti.backend.common.response.PageResponse;
 import com.sayarti.backend.security.jwt.AuthenticatedUser;
 import com.sayarti.backend.vehicle.dto.CreateVehicleRequest;
 import com.sayarti.backend.vehicle.dto.DeleteVehicleResponse;
@@ -9,10 +10,12 @@ import com.sayarti.backend.vehicle.dto.UpdateVehicleRequest;
 import com.sayarti.backend.vehicle.dto.VehicleResponse;
 import com.sayarti.backend.vehicle.service.VehicleService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import java.util.List;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -24,8 +27,11 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.validation.annotation.Validated;
 
+@Validated
 @RestController
 @RequestMapping("/api/v1/vehicles")
 @Tag(name = "Vehicles", description = "Authenticated vehicle management. Ownership is derived "
@@ -47,9 +53,17 @@ public class VehicleController {
     }
 
     @GetMapping
-    @Operation(summary = "List the authenticated user's active vehicles")
-    public ApiResponse<List<VehicleResponse>> list(@AuthenticationPrincipal AuthenticatedUser user) {
-        return ApiResponse.success(service.list(user));
+    @Operation(summary = "List the authenticated user's active vehicles", description = "Returns "
+            + "a paginated active-only list. Defaults to createdAt descending. Supported sortBy "
+            + "values: createdAt, brand, model, year, currentMileage; sortDirection is asc or desc. "
+            + "Equal values use id as a deterministic tie-breaker. Empty pages are successful.")
+    public ApiResponse<PageResponse<VehicleResponse>> list(
+            @AuthenticationPrincipal AuthenticatedUser user,
+            @Parameter(description = "Zero-based page index") @RequestParam(defaultValue = "0") @Min(0) int page,
+            @Parameter(description = "Page size (1-100)") @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size,
+            @RequestParam(required = false) String sortBy,
+            @RequestParam(required = false) String sortDirection) {
+        return ApiResponse.success(service.list(user, page, size, sortBy, sortDirection));
     }
 
     @GetMapping("/{vehicleId}")

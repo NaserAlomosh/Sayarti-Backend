@@ -1,6 +1,7 @@
 package com.sayarti.backend.fuel.controller;
 
 import com.sayarti.backend.common.response.ApiResponse;
+import com.sayarti.backend.common.response.PageResponse;
 import com.sayarti.backend.fuel.dto.CreateFuelRecordRequest;
 import com.sayarti.backend.fuel.dto.DeleteFuelRecordResponse;
 import com.sayarti.backend.fuel.dto.FuelRecordResponse;
@@ -9,11 +10,14 @@ import com.sayarti.backend.fuel.dto.UpdateFuelRecordRequest;
 import com.sayarti.backend.fuel.service.FuelRecordService;
 import com.sayarti.backend.security.jwt.AuthenticatedUser;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import java.time.YearMonth;
-import java.util.List;
+import java.time.Instant;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -27,7 +31,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.validation.annotation.Validated;
 
+@Validated
 @RestController
 @RequestMapping("/api/v1/vehicles/{vehicleId}/fuel-records")
 @Tag(name = "Fuel Records", description = "Fuel tracking for owned GASOLINE, DIESEL, HYBRID, "
@@ -51,11 +57,22 @@ public class FuelRecordController {
     }
 
     @GetMapping
-    @Operation(summary = "List active fuel records", description = "Returns only records for the "
-            + "authenticated user's active vehicle, ordered by filledAt then createdAt descending.")
-    public ApiResponse<List<FuelRecordResponse>> list(
-            @AuthenticationPrincipal AuthenticatedUser user, @PathVariable UUID vehicleId) {
-        return ApiResponse.success(service.list(user, vehicleId));
+    @Operation(summary = "List active fuel records", description = "Returns an active-only paginated "
+            + "history. Defaults to filledAt descending. Supported sortBy values: filledAt, createdAt, odometerKm, totalCost; "
+            + "sortDirection is asc or desc and id is the deterministic tie-breaker. Optional from "
+            + "and to are inclusive ISO-8601 UTC-aware instants applied to filledAt; from must not "
+            + "exceed to. Filters compose with ownership, soft deletion, sorting, and pagination. "
+            + "Empty pages are successful; inaccessible vehicles return VEHICLE_NOT_FOUND.")
+    public ApiResponse<PageResponse<FuelRecordResponse>> list(
+            @AuthenticationPrincipal AuthenticatedUser user, @PathVariable UUID vehicleId,
+            @RequestParam(defaultValue = "0") @Min(0) int page,
+            @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size,
+            @RequestParam(required = false) String sortBy,
+            @RequestParam(required = false) String sortDirection,
+            @RequestParam(required = false) Instant from,
+            @RequestParam(required = false) Instant to) {
+        return ApiResponse.success(service.list(user, vehicleId, page, size, sortBy,
+                sortDirection, from, to));
     }
 
     @GetMapping("/{fuelRecordId}")

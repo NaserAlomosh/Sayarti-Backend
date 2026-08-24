@@ -187,12 +187,12 @@ class FuelRecordIntegrationTest extends AbstractIntegrationTest {
                 createBody(12000, "USD").replace("2026-08-20", "2026-08-21"))
                 .andReturn().getResponse().getContentAsString());
         mvc.perform(get(url(vehicleId)).header("Authorization", bearer(session)))
-                .andExpect(jsonPath("$.data[0].id").value(second.toString()))
-                .andExpect(jsonPath("$.data[1].id").value(first.toString()));
+                .andExpect(jsonPath("$.data.content[0].id").value(second.toString()))
+                .andExpect(jsonPath("$.data.content[1].id").value(first.toString()));
         mvc.perform(delete(url(vehicleId) + "/" + second).header("Authorization", bearer(session)))
                 .andExpect(status().isOk());
         mvc.perform(get(url(vehicleId)).header("Authorization", bearer(session)))
-                .andExpect(jsonPath("$.data.length()").value(1));
+                .andExpect(jsonPath("$.data.content.length()").value(1));
         mvc.perform(get(url(vehicleId) + "/" + second).header("Authorization", bearer(session)))
                 .andExpect(status().isNotFound());
         assertThat(fuelRecords.findById(second).orElseThrow().getDeletedAt()).isNotNull();
@@ -285,6 +285,59 @@ class FuelRecordIntegrationTest extends AbstractIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.liquidFuelCalculationsSupported").value(false))
                 .andExpect(jsonPath("$.data.averageFuelEfficiencyKmPerLiter").doesNotExist());
+    }
+
+    @Test
+    void fuelDateBoundsSortingAndPaginationCompose() throws Exception {
+        Session session = session("fuel-composed-query@example.com");
+        UUID vehicleId = vehicle(session, "GASOLINE", 10000);
+        UUID boundary = recordId(create(session, vehicleId,
+                fuelBody(10000, "10", "1", "2026-01-01T00:00:00Z"))
+                .andReturn().getResponse().getContentAsString());
+        UUID middle = recordId(create(session, vehicleId,
+                fuelBody(10001, "20", "1", "2026-01-02T00:00:00Z"))
+                .andReturn().getResponse().getContentAsString());
+        create(session, vehicleId, fuelBody(10002, "30", "1", "2026-01-03T00:00:00Z"));
+
+        mvc.perform(get(url(vehicleId) + "?from=2026-01-01T00:00:00Z&to=2026-01-02T00:00:00Z"
+                        + "&sortBy=totalCost&sortDirection=desc&size=1&page=0")
+                        .header("Authorization", bearer(session)))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.data.totalElements").value(2))
+                .andExpect(jsonPath("$.data.content[0].id").value(middle.toString()));
+        mvc.perform(get(url(vehicleId) + "?from=2026-01-01T00:00:00Z"
+                        + "&sortBy=totalCost&sortDirection=asc&size=1&page=0")
+                        .header("Authorization", bearer(session)))
+                .andExpect(jsonPath("$.data.content[0].id").value(boundary.toString()));
+        mvc.perform(get(url(vehicleId) + "?to=2026-01-01T00:00:00Z")
+                        .header("Authorization", bearer(session)))
+                .andExpect(jsonPath("$.data.totalElements").value(1))
+                .andExpect(jsonPath("$.data.content[0].id").value(boundary.toString()));
+    }
+
+    @Test
+    void historyQueryValidationAndEmptyRangesUseStandardResponses() throws Exception {
+        Session session = session("query@example.com");
+        UUID vehicleId = vehicle(session, "GASOLINE", 10000);
+        mvc.perform(get(url(vehicleId) + "?from=2026-01-01T00:00:00Z&to=2026-01-01T00:00:00Z"
+                        + "&sortBy=filledAt&sortDirection=asc&page=0&size=1")
+                        .header("Authorization", bearer(session)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.content.length()").value(0))
+                .andExpect(jsonPath("$.data.totalElements").value(0));
+        mvc.perform(get(url(vehicleId) + "?from=2026-01-02T00:00:00Z&to=2026-01-01T00:00:00Z")
+                        .header("Authorization", bearer(session)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error.code").value("VALIDATION_ERROR"));
+        mvc.perform(get(url(vehicleId) + "?from=not-an-instant")
+                        .header("Authorization", bearer(session)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error.code").value("VALIDATION_ERROR"));
+        mvc.perform(get(url(vehicleId) + "?sortBy=deletedAt")
+                        .header("Authorization", bearer(session)))
+                .andExpect(status().isBadRequest());
+        mvc.perform(get(url(vehicleId) + "?sortDirection=sideways")
+                        .header("Authorization", bearer(session)))
+                .andExpect(status().isBadRequest());
     }
 
     private org.springframework.test.web.servlet.ResultActions create(

@@ -3,6 +3,8 @@ package com.sayarti.backend.maintenance.service;
 import com.sayarti.backend.common.exception.BusinessValidationException;
 import com.sayarti.backend.common.exception.ErrorCode;
 import com.sayarti.backend.common.exception.ResourceNotFoundException;
+import com.sayarti.backend.common.query.ListQuerySupport;
+import com.sayarti.backend.common.response.PageResponse;
 import com.sayarti.backend.maintenance.dto.CreateMaintenanceRecordRequest;
 import com.sayarti.backend.maintenance.dto.MaintenanceRecordResponse;
 import com.sayarti.backend.maintenance.dto.UpdateMaintenanceRecordRequest;
@@ -15,14 +17,19 @@ import com.sayarti.backend.user.repository.UserRepository;
 import com.sayarti.backend.vehicle.entity.Vehicle;
 import com.sayarti.backend.vehicle.repository.VehicleRepository;
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.Locale;
 import java.util.UUID;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class MaintenanceRecordService {
+    private static final Map<String, String> SORT_FIELDS = Map.of(
+            "serviceDate", "serviceDate", "createdAt", "createdAt", "mileageKm", "mileageKm", "cost", "cost");
     private final MaintenanceRecordRepository records;
     private final VehicleRepository vehicles;
     private final UserRepository users;
@@ -50,12 +57,22 @@ public class MaintenanceRecordService {
     }
 
     @Transactional(readOnly = true)
-    public List<MaintenanceRecordResponse> list(AuthenticatedUser user, UUID vehicleId) {
+    public PageResponse<MaintenanceRecordResponse> list(AuthenticatedUser user, UUID vehicleId, int page, int size,
+            String sortBy, String sortDirection, Instant from, Instant to) {
         ownedVehicle(user, vehicleId);
-        return records
-                .findAllByVehicleIdAndDeletedAtIsNullOrderByServiceDateDescCreatedAtDescIdDesc(
-                        vehicleId)
-                .stream().map(MaintenanceRecordResponse::from).toList();
+        ListQuerySupport.validateRange(from, to);
+        var pageable = ListQuerySupport.pageable(page, size, sortBy, sortDirection,
+                "serviceDate", Sort.Direction.DESC, SORT_FIELDS, "createdAt");
+        var result = records.findAll((root, query, cb) -> {
+            var predicate = cb.and(cb.equal(root.get("vehicleId"), vehicleId),
+                    cb.isNull(root.get("deletedAt")));
+            if (from != null) predicate = cb.and(predicate, cb.greaterThanOrEqualTo(
+                    root.<Instant>get("serviceDate"), from));
+            if (to != null) predicate = cb.and(predicate, cb.lessThanOrEqualTo(
+                    root.<Instant>get("serviceDate"), to));
+            return predicate;
+        }, pageable).map(MaintenanceRecordResponse::from);
+        return PageResponse.from(result);
     }
 
     @Transactional(readOnly = true)
