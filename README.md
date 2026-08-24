@@ -63,6 +63,10 @@ The Java 17 Maven/Spring Boot foundation currently includes:
 - True Vehicle Cost statistics with vehicle ownership enforcement.
 - Vehicle dashboard summaries with vehicle ownership enforcement.
 - Recent vehicle activity with vehicle ownership enforcement.
+- Allowlisted, deterministic sorting for vehicle, fuel-record, maintenance-record, and expense
+  list endpoints.
+- Inclusive business-date range filtering for fuel-record, maintenance-record, and expense
+  histories.
 - Microsoft SQL Server persistence.
 - Flyway schema migrations.
 - V1 database indexes aligned with the current verified repository and scheduler query patterns.
@@ -324,8 +328,35 @@ config/
 - [x] **Create Standard Success Response**
 - [x] **Create Standard Error Response**
 - [x] **Create Pagination Response**
-- [ ] **Create Sorting Support**
-- [ ] **Create Date Range Filtering**
+- [x] **Create Sorting Support**
+- [x] **Create Date Range Filtering**
+
+Sorting is available on the following paginated `GET` endpoints through optional `sortBy` and
+`sortDirection` query parameters:
+
+- `/api/v1/vehicles`: `createdAt`, `brand`, `model`, `year`, or `currentMileage`.
+- `/api/v1/vehicles/{vehicleId}/fuel-records`: `filledAt`, `createdAt`, `odometerKm`, or
+  `totalCost`.
+- `/api/v1/vehicles/{vehicleId}/maintenance-records`: `serviceDate`, `createdAt`, `mileageKm`,
+  or `cost`.
+- `/api/v1/vehicles/{vehicleId}/expenses`: `expenseDate`, `createdAt`, `amount`, or `title`.
+
+`sortDirection` accepts `asc` or `desc` case-insensitively. With no sorting parameters, vehicles
+default to `createdAt` descending; fuel, maintenance, and expense histories default respectively
+to `filledAt`, `serviceDate`, and `expenseDate` descending, with `createdAt` and then `id` as
+deterministic tie-breakers. Explicit sorts use `id` as their deterministic tie-breaker.
+Unsupported fields and directions return `400 VALIDATION_ERROR` rather than exposing arbitrary
+entity fields.
+
+Date-range filtering is available on the fuel-record, maintenance-record, and expense history
+endpoints above through optional `from` and `to` query parameters. Both parameters are ISO-8601
+UTC-aware instants and are inclusive; they filter `filledAt`, `serviceDate`, and `expenseDate`,
+respectively. Either bound may be supplied independently. Malformed instants and ranges where
+`from` is later than `to` return `400 VALIDATION_ERROR`; equal bounds are valid.
+
+Sorting and date filters are applied before the existing `page`/`size` pagination, so response
+metadata describes the filtered result. All queries retain their existing authenticated ownership
+constraints and exclude soft-deleted vehicles or records.
 
 ---
 
