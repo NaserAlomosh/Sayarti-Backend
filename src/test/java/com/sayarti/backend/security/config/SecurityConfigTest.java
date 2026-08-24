@@ -11,6 +11,7 @@ import com.sayarti.backend.i18n.MessageLocalizer;
 import com.sayarti.backend.security.filter.JwtAuthenticationFilter;
 import com.sayarti.backend.security.jwt.JwtService;
 import com.sayarti.backend.user.repository.UserRepository;
+import java.util.Locale;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -50,6 +51,18 @@ class SecurityConfigTest {
     void setUpLocalization() {
         when(messageLocalizer.error(ErrorCode.UNAUTHORIZED, "Authentication is required"))
                 .thenReturn("Authentication is required");
+        when(messageLocalizer.error(ErrorCode.UNAUTHORIZED, "Authentication is required",
+                Locale.ENGLISH)).thenReturn("Authentication is required");
+        when(messageLocalizer.error(ErrorCode.UNAUTHORIZED, "Authentication is required",
+                Locale.forLanguageTag("ar"))).thenReturn("المصادقة مطلوبة");
+    }
+
+    @Test
+    void localizesSecurityEntryPointFromRequestHeader() throws Exception {
+        mockMvc.perform(get("/test/secured").header("Accept-Language", "ar"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.error.code").value("UNAUTHORIZED"))
+                .andExpect(jsonPath("$.error.message").value("المصادقة مطلوبة"));
     }
 
     @Test

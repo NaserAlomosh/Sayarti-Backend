@@ -35,6 +35,7 @@ public class RestAccessDeniedHandler implements AccessDeniedHandler {
         response.setStatus(HttpServletResponse.SC_FORBIDDEN);
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         objectMapper.writeValue(response.getOutputStream(),
-                ErrorResponse.of(ErrorCode.FORBIDDEN.name(), localizer.error(ErrorCode.FORBIDDEN, "Access is denied")));
+                ErrorResponse.of(ErrorCode.FORBIDDEN.name(), localizer.error(ErrorCode.FORBIDDEN,
+                        "Access is denied", com.sayarti.backend.i18n.SayartiLocaleResolver.resolveHeader(request))));
     }
 }

@@ -19,6 +19,11 @@ public class MessageLocalizer {
                 englishFallback, LocaleContextHolder.getLocale());
     }
 
+    public String error(ErrorCode code, String englishFallback, Locale locale) {
+        return get("error." + code.name().toLowerCase(Locale.ROOT).replace('_', '.'),
+                englishFallback, locale);
+    }
+
     public String text(String key, String englishFallback, Object... arguments) {
         return messages.getMessage(key, arguments, englishFallback, supported(LocaleContextHolder.getLocale()));
     }

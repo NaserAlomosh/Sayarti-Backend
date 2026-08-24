@@ -52,21 +52,24 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         try {
             var id = jwtService.parseUserId(header.substring(7));
             var user = users.findByIdAndDeletedAtIsNull(id).orElseThrow();
-            var principal = new AuthenticatedUser(user.getId(), user.getEmail());
+            var principal = new AuthenticatedUser(user.getId(), user.getEmail(),
+                    user.getPreferredLanguage());
             SecurityContextHolder.getContext().setAuthentication(
                     new UsernamePasswordAuthenticationToken(principal, null, java.util.List.of()));
             chain.doFilter(req, res);
         } catch (ExpiredJwtException e) {
-            write(res, ErrorCode.AUTH_TOKEN_EXPIRED, "Access token has expired");
+            write(req, res, ErrorCode.AUTH_TOKEN_EXPIRED, "Access token has expired");
         } catch (Exception e) {
-            write(res, ErrorCode.AUTH_INVALID_TOKEN, "Access token is invalid");
+            write(req, res, ErrorCode.AUTH_INVALID_TOKEN, "Access token is invalid");
         }
     }
 
-    private void write(HttpServletResponse res, ErrorCode code, String message) throws IOException {
+    private void write(HttpServletRequest req, HttpServletResponse res, ErrorCode code,
+            String message) throws IOException {
         SecurityContextHolder.clearContext();
         res.setStatus(401);
         res.setContentType(MediaType.APPLICATION_JSON_VALUE);
-        mapper.writeValue(res.getOutputStream(), ErrorResponse.of(code.name(), localizer.error(code, message)));
+        mapper.writeValue(res.getOutputStream(), ErrorResponse.of(code.name(), localizer.error(code,
+                message, com.sayarti.backend.i18n.SayartiLocaleResolver.resolveHeader(req))));
     }
 }
