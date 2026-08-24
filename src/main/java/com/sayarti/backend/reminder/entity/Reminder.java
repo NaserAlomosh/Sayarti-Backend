@@ -1,5 +1,6 @@
 package com.sayarti.backend.reminder.entity;
 
+import com.sayarti.backend.common.persistence.BaseAuditableEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -12,7 +13,7 @@ import org.hibernate.annotations.Nationalized;
 
 @Entity
 @Table(name = "reminders")
-public class Reminder {
+public class Reminder extends BaseAuditableEntity {
     @Id private UUID id;
     @Column(name = "vehicle_id", nullable = false) private UUID vehicleId;
     @Enumerated(EnumType.STRING) @Column(nullable = false, length = 30)
@@ -26,8 +27,6 @@ public class Reminder {
     @Column(nullable = false) private boolean completed;
     @Column(name = "completed_at") private Instant completedAt;
     @Column(name = "notification_delivered_at") private Instant notificationDeliveredAt;
-    @Column(name = "created_at", nullable = false) private Instant createdAt;
-    @Column(name = "updated_at", nullable = false) private Instant updatedAt;
     @Column(name = "deleted_at") private Instant deletedAt;
 
     protected Reminder() { }
@@ -37,9 +36,7 @@ public class Reminder {
         this.id = UUID.randomUUID();
         this.vehicleId = vehicleId;
         this.completed = false;
-        this.createdAt = Instant.now();
         update(category, title, description, triggerType, targetDate, targetMileage);
-        this.createdAt = this.updatedAt;
     }
 
     public void update(ReminderCategory category, String title, String description,
@@ -50,18 +47,16 @@ public class Reminder {
         this.triggerType = triggerType;
         this.targetDate = targetDate;
         this.targetMileage = targetMileage;
-        this.updatedAt = Instant.now();
     }
 
     public void complete() {
         if (!completed) {
             completed = true;
             completedAt = Instant.now();
-            updatedAt = completedAt;
         }
     }
 
-    public void delete() { deletedAt = Instant.now(); updatedAt = deletedAt; }
+    public void delete() { deletedAt = Instant.now(); }
     public void markNotificationDelivered(Instant deliveredAt) {
         notificationDeliveredAt = deliveredAt;
     }
@@ -76,7 +71,5 @@ public class Reminder {
     public boolean isCompleted() { return completed; }
     public Instant getCompletedAt() { return completedAt; }
     public Instant getNotificationDeliveredAt() { return notificationDeliveredAt; }
-    public Instant getCreatedAt() { return createdAt; }
-    public Instant getUpdatedAt() { return updatedAt; }
     public Instant getDeletedAt() { return deletedAt; }
 }

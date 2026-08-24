@@ -1,5 +1,6 @@
 package com.sayarti.backend.fuel.entity;
 
+import com.sayarti.backend.common.persistence.BaseAuditableEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -11,7 +12,7 @@ import org.hibernate.annotations.Nationalized;
 
 @Entity
 @Table(name = "fuel_records")
-public class FuelRecord {
+public class FuelRecord extends BaseAuditableEntity {
     @Id private UUID id;
     @Column(name = "vehicle_id", nullable = false) private UUID vehicleId;
     @Column(name = "odometer_km", nullable = false, precision = 19, scale = 2)
@@ -27,8 +28,6 @@ public class FuelRecord {
     @Column(name = "full_tank", nullable = false) private boolean fullTank;
     @Nationalized @Column(name = "station_name", length = 200) private String stationName;
     @Nationalized @Column(length = 2000) private String notes;
-    @Column(name = "created_at", nullable = false) private Instant createdAt;
-    @Column(name = "updated_at", nullable = false) private Instant updatedAt;
     @Column(name = "deleted_at") private Instant deletedAt;
 
     protected FuelRecord() { }
@@ -47,8 +46,6 @@ public class FuelRecord {
         this.fullTank = fullTank;
         this.stationName = trim(stationName);
         this.notes = trim(notes);
-        this.createdAt = Instant.now();
-        this.updatedAt = createdAt;
     }
 
     public void update(BigDecimal quantity, BigDecimal price, BigDecimal total, String currency,
@@ -61,9 +58,8 @@ public class FuelRecord {
         this.fullTank = fullTank;
         this.stationName = trim(stationName);
         this.notes = trim(notes);
-        this.updatedAt = Instant.now();
     }
-    public void delete() { deletedAt = Instant.now(); updatedAt = deletedAt; }
+    public void delete() { deletedAt = Instant.now(); }
     private String trim(String value) { return value == null ? null : value.trim(); }
     public UUID getId() { return id; }
     public UUID getVehicleId() { return vehicleId; }
@@ -76,7 +72,5 @@ public class FuelRecord {
     public boolean isFullTank() { return fullTank; }
     public String getStationName() { return stationName; }
     public String getNotes() { return notes; }
-    public Instant getCreatedAt() { return createdAt; }
-    public Instant getUpdatedAt() { return updatedAt; }
     public Instant getDeletedAt() { return deletedAt; }
 }

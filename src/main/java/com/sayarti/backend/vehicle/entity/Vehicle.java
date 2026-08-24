@@ -1,5 +1,6 @@
 package com.sayarti.backend.vehicle.entity;
 
+import com.sayarti.backend.common.persistence.BaseAuditableEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -13,7 +14,7 @@ import org.hibernate.annotations.Nationalized;
 
 @Entity
 @Table(name = "vehicles")
-public class Vehicle {
+public class Vehicle extends BaseAuditableEntity {
     @Id
     private UUID id;
     @Column(name = "user_id", nullable = false)
@@ -39,8 +40,6 @@ public class Vehicle {
     private BigDecimal batteryCapacityKwh;
     @Column(name = "estimated_range_km", precision = 10, scale = 2)
     private BigDecimal estimatedRangeKm;
-    @Column(name = "created_at", nullable = false) private Instant createdAt;
-    @Column(name = "updated_at", nullable = false) private Instant updatedAt;
     @Column(name = "deleted_at") private Instant deletedAt;
 
     protected Vehicle() { }
@@ -55,8 +54,6 @@ public class Vehicle {
         updateDetails(brand, model, year, powertrainType, licensePlate, nickname, imageUrl,
                 fuelType, fuelTankCapacityLiters, batteryCapacityKwh, estimatedRangeKm);
         this.currentMileage = currentMileage;
-        this.createdAt = Instant.now();
-        this.updatedAt = createdAt;
     }
 
     public void updateDetails(String brand, String model, int year,
@@ -74,10 +71,9 @@ public class Vehicle {
         this.fuelTankCapacityLiters = fuelTankCapacityLiters;
         this.batteryCapacityKwh = batteryCapacityKwh;
         this.estimatedRangeKm = estimatedRangeKm;
-        this.updatedAt = Instant.now();
     }
-    public void updateMileage(long mileage) { this.currentMileage = mileage; this.updatedAt = Instant.now(); }
-    public void delete() { this.deletedAt = Instant.now(); this.updatedAt = deletedAt; }
+    public void updateMileage(long mileage) { this.currentMileage = mileage; }
+    public void delete() { this.deletedAt = Instant.now(); }
     private String trim(String value) { return value == null ? null : value.trim(); }
 
     public UUID getId() { return id; } public UUID getUserId() { return userId; }
@@ -89,6 +85,5 @@ public class Vehicle {
     public BigDecimal getFuelTankCapacityLiters() { return fuelTankCapacityLiters; }
     public BigDecimal getBatteryCapacityKwh() { return batteryCapacityKwh; }
     public BigDecimal getEstimatedRangeKm() { return estimatedRangeKm; }
-    public Instant getCreatedAt() { return createdAt; } public Instant getUpdatedAt() { return updatedAt; }
     public Instant getDeletedAt() { return deletedAt; }
 }

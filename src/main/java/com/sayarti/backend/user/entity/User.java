@@ -1,5 +1,6 @@
 package com.sayarti.backend.user.entity;
 
+import com.sayarti.backend.common.persistence.BaseAuditableEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -12,7 +13,7 @@ import org.hibernate.annotations.Nationalized;
 
 @Entity
 @Table(name = "users")
-public class User {
+public class User extends BaseAuditableEntity {
     @Id
     private UUID id;
     @Nationalized
@@ -36,10 +37,6 @@ public class User {
     private String countryCode;
     @Column(name = "default_currency_code", length = 3)
     private String defaultCurrencyCode;
-    @Column(name = "created_at", nullable = false)
-    private Instant createdAt;
-    @Column(name = "updated_at", nullable = false)
-    private Instant updatedAt;
     @Column(name = "deleted_at")
     private Instant deletedAt;
 
@@ -53,8 +50,6 @@ public class User {
         this.passwordHash = passwordHash;
         this.authProvider = AuthProvider.LOCAL;
         this.emailVerified = false;
-        this.createdAt = Instant.now();
-        this.updatedAt = this.createdAt;
     }
 
     public User(String firstName, String lastName, String email, String passwordHash,
@@ -74,8 +69,6 @@ public class User {
         user.googleSubject = googleSubject;
         user.authProvider = AuthProvider.GOOGLE;
         user.emailVerified = true;
-        user.createdAt = Instant.now();
-        user.updatedAt = user.createdAt;
         return user;
     }
 
@@ -103,16 +96,8 @@ public class User {
         return authProvider;
     }
 
-    public Instant getCreatedAt() {
-        return createdAt;
-    }
-
     public String getGoogleSubject() {
         return googleSubject;
-    }
-
-    public Instant getUpdatedAt() {
-        return updatedAt;
     }
 
     public Instant getDeletedAt() {
@@ -129,17 +114,14 @@ public class User {
     public void selectCountry(String countryCode, String defaultCurrencyCode) {
         this.countryCode = countryCode;
         this.defaultCurrencyCode = defaultCurrencyCode;
-        this.updatedAt = Instant.now();
     }
 
     public void changeDefaultCurrency(String currencyCode) {
         this.defaultCurrencyCode = currencyCode;
-        this.updatedAt = Instant.now();
     }
 
     public void verifyEmail() {
         this.emailVerified = true;
-        this.updatedAt = Instant.now();
     }
 
     public void updateProfile(String firstName, String lastName) {
@@ -149,12 +131,9 @@ public class User {
         if (lastName != null) {
             this.lastName = lastName.trim();
         }
-        this.updatedAt = Instant.now();
     }
 
     public void delete() {
-        Instant now = Instant.now();
-        this.deletedAt = now;
-        this.updatedAt = now;
+        this.deletedAt = Instant.now();
     }
 }
