@@ -54,6 +54,7 @@ The Java 17 Maven/Spring Boot foundation currently includes:
 - Expense statistics with vehicle ownership enforcement.
 - True Vehicle Cost statistics with vehicle ownership enforcement.
 - Vehicle dashboard summaries with vehicle ownership enforcement.
+- Recent vehicle activity with vehicle ownership enforcement.
 - Microsoft SQL Server persistence.
 - Flyway schema migrations.
 - Hibernate schema validation.
@@ -70,7 +71,7 @@ Local verification has completed successfully with:
 ./mvnw clean verify
 
 BUILD SUCCESS
-Tests run: 143
+Tests run: 148
 Failures: 0
 Errors: 0
 Skipped: 0
@@ -93,7 +94,8 @@ Fuel Tracking CRUD with ownership protection, Maintenance CRUD with ownership pr
 Expense CRUD with ownership protection, Reminder CRUD and completion with ownership
 protection, Device Management, General Vehicle Statistics, Fuel Statistics, Maintenance
 Statistics, Expense Statistics, True Vehicle Cost, and the Vehicle Dashboard are implemented
-with ownership protection and locally verified. Fuel Calculations and Energy Tracking are not
+with ownership protection and locally verified. Recent Vehicle Activity is also implemented with
+ownership protection and locally verified. Fuel Calculations and Energy Tracking are not
 implemented yet.
 
 LOCAL email verification is implemented and locally verified. The provider-neutral SMTP
@@ -853,7 +855,14 @@ empty currency and category arrays, and `null` latest date and mileage.
 
 # 33. Recent Vehicle Activity
 
-- [ ] Create Activity Feed
+- [x] Create Activity Feed — `GET /api/v1/vehicles/{vehicleId}/activity`
+
+This authenticated endpoint returns a bounded, newest-first timeline for an owned, active vehicle.
+It combines active fuel, maintenance, and expense records with completed reminders, uses each
+source record's business event timestamp, retains original monetary values and currencies, and
+excludes soft-deleted records and incomplete reminders. The optional `limit` parameter defaults to
+20 and accepts values from 1 through 100. Missing, deleted, and cross-user vehicles return
+`VEHICLE_NOT_FOUND` to preserve resource hiding.
 
 ---
 
@@ -1035,6 +1044,14 @@ api.version=1.44
 
 - [x] Vehicle Dashboard
 
+## Recent Vehicle Activity Tests
+
+- [x] Recent Vehicle Activity Feed
+- [x] Empty Vehicle Activity
+- [x] Unified Newest-First Ordering
+- [x] Soft-Deleted and Incomplete Activity Exclusion
+- [x] Default and Custom Activity Limits
+
 ## Security Tests
 
 - [x] Unauthenticated Request
@@ -1045,6 +1062,7 @@ api.version=1.44
 - [x] Cross-User Maintenance Access
 - [x] Cross-User Expense Access
 - [x] Cross-User Reminder Access
+- [x] Cross-User Recent Vehicle Activity Access
 
 ---
 
@@ -1060,7 +1078,7 @@ Current verified baseline:
 
 ```text
 BUILD SUCCESS
-Tests run: 143
+Tests run: 148
 Failures: 0
 Errors: 0
 Skipped: 0
@@ -1120,7 +1138,7 @@ before its own checklist items are marked complete.
 - [x] Fuel Statistics
 - [x] True Vehicle Cost
 - [x] Dashboard
-- [ ] Recent Activity
+- [x] Recent Activity
 - [x] Swagger
 - [ ] Full V1 Testing
 - [ ] Docker Compose
