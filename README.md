@@ -65,6 +65,7 @@ The Java 17 Maven/Spring Boot foundation currently includes:
 - Recent vehicle activity with vehicle ownership enforcement.
 - Microsoft SQL Server persistence.
 - Flyway schema migrations.
+- V1 database indexes aligned with the current verified repository and scheduler query patterns.
 - Hibernate schema validation.
 - OpenAPI / Swagger documentation.
 - Microsoft SQL Server Testcontainers for database-backed integration tests.
@@ -79,7 +80,7 @@ Local verification has completed successfully with:
 ./mvnw clean verify
 
 BUILD SUCCESS
-Tests run: 149
+Tests run: 153
 Failures: 0
 Errors: 0
 Skipped: 0
@@ -103,8 +104,8 @@ Expense CRUD with ownership protection, Reminder CRUD and completion with owners
 protection, Device Management, General Vehicle Statistics, Fuel Statistics, Maintenance
 Statistics, Expense Statistics, True Vehicle Cost, and the Vehicle Dashboard are implemented
 with ownership protection and locally verified. Recent Vehicle Activity is also implemented with
-ownership protection and locally verified. Fuel Calculations and the Reminder Scheduler are
-implemented and locally verified. Energy Tracking is not implemented.
+ownership protection and locally verified. Fuel Calculations, the Reminder Scheduler, and
+Database Indexes are implemented and locally verified. Energy Tracking is not implemented.
 
 LOCAL email verification is implemented and locally verified. The provider-neutral SMTP
 adapter is implemented and automated-test covered. Real SMTP delivery remains
@@ -290,7 +291,7 @@ Required tables:
 
 All schema changes must be performed through Flyway migrations. The complete required V1 table
 set is validated by Hibernate and the Microsoft SQL Server Testcontainers integration suite in the
-verified 149-test build.
+verified 153-test build.
 
 ---
 
@@ -918,7 +919,7 @@ this behavior using Microsoft SQL Server Testcontainers.
 
 # 36. Database Indexes
 
-- [ ] Complete Required V1 Indexes
+- [x] Complete Required V1 Indexes
 
 Recommended areas:
 
@@ -944,9 +945,18 @@ devices.user_id
 devices.fcm_token
 ```
 
-The Device Management indexes for `devices.user_id` and `devices.fcm_token` are implemented
-and verified. Complete Required V1 Indexes remains incomplete until the required indexes for
-every V1 feature are implemented and verified.
+The verified V1 query-pattern indexes are provided by
+`V15__add_v1_query_pattern_indexes.sql` and covered by `DatabaseIndexesIntegrationTest`.
+They align with the current V1 repository and query patterns for vehicle ownership and active
+records, active fuel records ordered by date, active maintenance records ordered by date,
+active/completed reminder access, and reminder-scheduler scans for pending `DATE` and `MILEAGE`
+triggers. The scheduler indexes use filtered SQL Server predicates so pending-reminder scans stay
+narrow. These indexes align with the current verified query patterns; no benchmarked performance
+gain is claimed.
+
+Existing unique constraints and indexes, including those for users, refresh tokens, email
+verification OTPs, and devices, were retained and were not duplicated by the V1 query-pattern
+migration. Their continued presence is also verified by `DatabaseIndexesIntegrationTest`.
 
 ---
 
@@ -1114,7 +1124,7 @@ Current verified baseline:
 
 ```text
 BUILD SUCCESS
-Tests run: 149
+Tests run: 153
 Failures: 0
 Errors: 0
 Skipped: 0
@@ -1170,6 +1180,7 @@ before its own checklist items are marked complete.
 - [x] Device Management
 - [ ] Firebase Push Notifications
 - [x] Reminder Scheduler
+- [x] Database Indexes
 - [x] Statistics
 - [x] Fuel Statistics
 - [x] True Vehicle Cost
