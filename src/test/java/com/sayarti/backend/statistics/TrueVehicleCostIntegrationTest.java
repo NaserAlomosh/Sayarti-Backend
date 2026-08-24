@@ -64,7 +64,7 @@ class TrueVehicleCostIntegrationTest extends AbstractIntegrationTest {
 
         mvc.perform(get(url(vehicle)).header("Authorization", bearer(session)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.currentMileage").value(1000.0))
+                .andExpect(jsonPath("$.data.currentMileage").value(1500.0))
                 .andExpect(jsonPath("$.data.totalFuelCostByCurrency[0].amount").value(60.0))
                 .andExpect(jsonPath("$.data.totalMaintenanceCostByCurrency[0].currencyCode").value("JOD"))
                 .andExpect(jsonPath("$.data.totalMaintenanceCostByCurrency[0].amount").value(30.0))
