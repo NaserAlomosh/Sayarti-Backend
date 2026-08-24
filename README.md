@@ -68,6 +68,7 @@ The Java 17 Maven/Spring Boot foundation currently includes:
 - V1 database indexes aligned with the current verified repository and scheduler query patterns.
 - Hibernate schema validation.
 - OpenAPI / Swagger documentation.
+- Safe application request logging with request correlation IDs.
 - Microsoft SQL Server Testcontainers for database-backed integration tests.
 
 Google sessions use the same Sayarti JWT and refresh-token model as local sessions.
@@ -80,7 +81,7 @@ Local verification has completed successfully with:
 ./mvnw clean verify
 
 BUILD SUCCESS
-Tests run: 153
+Tests run: 157
 Failures: 0
 Errors: 0
 Skipped: 0
@@ -291,7 +292,7 @@ Required tables:
 
 All schema changes must be performed through Flyway migrations. The complete required V1 table
 set is validated by Hibernate and the Microsoft SQL Server Testcontainers integration suite in the
-verified 153-test build.
+verified 157-test build.
 
 ---
 
@@ -962,9 +963,17 @@ migration. Their continued presence is also verified by `DatabaseIndexesIntegrat
 
 # 37. Logging
 
-- [ ] Configure Application Request Logging
+- [x] Configure Application Request Logging
 
-Never log passwords, password hashes, OTP values, OTP hashes, JWTs, refresh tokens, Google tokens, Firebase keys, FCM tokens, email-provider credentials, or DB passwords.
+Completed HTTP requests are logged with the request method, request path, response status, request
+duration, authenticated user ID when available, and an `X-Request-ID` correlation/request ID. A
+valid incoming request ID is reused and returned in the response; an invalid or missing value is
+safely replaced with a generated UUID. Logging deliberately excludes query strings, request
+bodies, and headers so sensitive data is not captured.
+
+Sensitive values must never be logged, including passwords, password hashes, OTP values or hashes,
+JWT/access tokens, refresh tokens, `Authorization` headers, `Cookie` or `Set-Cookie` values, Google
+tokens, Firebase credentials, FCM tokens, email-provider credentials, and database credentials.
 
 ---
 
@@ -1124,7 +1133,7 @@ Current verified baseline:
 
 ```text
 BUILD SUCCESS
-Tests run: 153
+Tests run: 157
 Failures: 0
 Errors: 0
 Skipped: 0
