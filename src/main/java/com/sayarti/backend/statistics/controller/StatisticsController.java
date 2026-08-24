@@ -6,6 +6,7 @@ import com.sayarti.backend.statistics.dto.ExpenseStatisticsResponse;
 import com.sayarti.backend.statistics.dto.FuelStatisticsResponse;
 import com.sayarti.backend.statistics.dto.GeneralStatisticsResponse;
 import com.sayarti.backend.statistics.dto.MaintenanceStatisticsResponse;
+import com.sayarti.backend.statistics.dto.TrueVehicleCostResponse;
 import com.sayarti.backend.statistics.service.StatisticsService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -114,5 +115,28 @@ public class StatisticsController {
             @PathVariable UUID vehicleId,
             @AuthenticationPrincipal AuthenticatedUser user) {
         return ApiResponse.success(service.expense(user, vehicleId));
+    }
+
+    @GetMapping("/total-cost")
+    @Operation(summary = "Get true vehicle cost", description = "Sums active fuel, maintenance, "
+            + "and expense costs by original currency without conversion; reminders are excluded. "
+            + "Average monthly cost uses the inclusive count of UTC calendar months from the "
+            + "earliest through latest active cost record (minimum one). Cost per kilometer divides "
+            + "each currency total by FuelCalculator's positive consecutive fuel-odometer eligible "
+            + "distance, not current mileage, and is null when that distance is unavailable. Empty "
+            + "histories retain current mileage and return empty currency arrays. Missing, deleted, "
+            + "and other users' vehicles return VEHICLE_NOT_FOUND to hide resource existence.")
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200",
+            description = "True vehicle cost response",
+            content = @Content(schema = @Schema(implementation = TrueVehicleCostResponse.class)))
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401",
+            description = "Bearer authentication is missing or invalid")
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404",
+            description = "VEHICLE_NOT_FOUND for missing, deleted, or inaccessible vehicles")
+    public ApiResponse<TrueVehicleCostResponse> getTotalCost(
+            @Parameter(description = "Owned active vehicle UUID", required = true)
+            @PathVariable UUID vehicleId,
+            @AuthenticationPrincipal AuthenticatedUser user) {
+        return ApiResponse.success(service.totalCost(user, vehicleId));
     }
 }
