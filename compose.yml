@@ -22,6 +22,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    volumes:
+      - ${FIREBASE_SERVICE_ACCOUNT_PATH}:/run/secrets/firebase-service-account.json:ro
     environment:
       SPRING_PROFILES_ACTIVE: dev
       DB_HOST: database
