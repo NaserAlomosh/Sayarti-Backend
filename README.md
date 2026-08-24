@@ -225,30 +225,13 @@ BUILD SUCCESS
 
 - [x] **Create Application Configuration**
 - [x] **Configure Environment Variables**
-- [ ] **Create / Finalize `.env.example`**
+- [x] **Create / Finalize `.env.example`**
 
-Current expected baseline:
-if any value of any key exist keep it not delete it
-```env
-DB_HOST=localhost
-DB_PORT=1433
-DB_NAME=sayarti
-DB_USERNAME=
-DB_PASSWORD=
-
-JWT_ACCESS_SECRET=
-JWT_REFRESH_SECRET=
-JWT_ACCESS_EXPIRATION=900000
-JWT_REFRESH_EXPIRATION=2592000000
-
-GOOGLE_CLIENT_ID=
-
-FIREBASE_SERVICE_ACCOUNT_PATH=
-
-EMAIL_OTP_EXPIRATION_SECONDS=300
-EMAIL_OTP_RESEND_COOLDOWN_SECONDS=60
-EMAIL_OTP_MAX_ATTEMPTS=5
-```
+`.env.example` now reflects the environment variables used by the current V1 backend for
+database and JWT configuration, the Google client ID, the Firebase service-account path,
+email OTP policy, SMTP, CORS, and reminder scheduler settings. It contains only safe
+placeholders and defaults; the real `.env` remains owner-managed, protected, and must not be
+overwritten or committed.
 
 ---
 
