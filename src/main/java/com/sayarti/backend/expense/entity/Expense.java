@@ -1,5 +1,6 @@
 package com.sayarti.backend.expense.entity;
 
+import com.sayarti.backend.common.persistence.BaseAuditableEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -13,7 +14,7 @@ import org.hibernate.annotations.Nationalized;
 
 @Entity
 @Table(name = "expenses")
-public class Expense {
+public class Expense extends BaseAuditableEntity {
     @Id private UUID id;
     @Column(name = "vehicle_id", nullable = false) private UUID vehicleId;
     @Enumerated(EnumType.STRING) @Column(nullable = false, length = 20)
@@ -23,8 +24,6 @@ public class Expense {
     @Column(nullable = false, precision = 19, scale = 4) private BigDecimal amount;
     @Column(name = "currency_code", nullable = false, length = 3) private String currencyCode;
     @Nationalized @Column(length = 2000) private String notes;
-    @Column(name = "created_at", nullable = false) private Instant createdAt;
-    @Column(name = "updated_at", nullable = false) private Instant updatedAt;
     @Column(name = "deleted_at") private Instant deletedAt;
 
     protected Expense() { }
@@ -33,9 +32,7 @@ public class Expense {
             BigDecimal amount, String currencyCode, String notes) {
         this.id = UUID.randomUUID();
         this.vehicleId = vehicleId;
-        this.createdAt = Instant.now();
         update(category, title, expenseDate, amount, currencyCode, notes);
-        this.createdAt = this.updatedAt;
     }
 
     public void update(ExpenseCategory category, String title, Instant expenseDate,
@@ -46,10 +43,9 @@ public class Expense {
         this.amount = amount;
         this.currencyCode = currencyCode;
         this.notes = notes == null ? null : notes.trim();
-        this.updatedAt = Instant.now();
     }
 
-    public void delete() { deletedAt = Instant.now(); updatedAt = deletedAt; }
+    public void delete() { deletedAt = Instant.now(); }
     public UUID getId() { return id; }
     public UUID getVehicleId() { return vehicleId; }
     public ExpenseCategory getCategory() { return category; }
@@ -58,7 +54,5 @@ public class Expense {
     public BigDecimal getAmount() { return amount; }
     public String getCurrencyCode() { return currencyCode; }
     public String getNotes() { return notes; }
-    public Instant getCreatedAt() { return createdAt; }
-    public Instant getUpdatedAt() { return updatedAt; }
     public Instant getDeletedAt() { return deletedAt; }
 }

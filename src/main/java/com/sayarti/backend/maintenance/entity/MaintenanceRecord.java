@@ -1,5 +1,6 @@
 package com.sayarti.backend.maintenance.entity;
 
+import com.sayarti.backend.common.persistence.BaseAuditableEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -13,7 +14,7 @@ import org.hibernate.annotations.Nationalized;
 
 @Entity
 @Table(name = "maintenance_records")
-public class MaintenanceRecord {
+public class MaintenanceRecord extends BaseAuditableEntity {
     @Id private UUID id;
     @Column(name = "vehicle_id", nullable = false) private UUID vehicleId;
     @Enumerated(EnumType.STRING) @Column(nullable = false, length = 30)
@@ -26,8 +27,6 @@ public class MaintenanceRecord {
     @Column(name = "currency_code", nullable = false, length = 3) private String currencyCode;
     @Nationalized @Column(name = "service_provider", length = 200) private String serviceProvider;
     @Nationalized @Column(length = 2000) private String notes;
-    @Column(name = "created_at", nullable = false) private Instant createdAt;
-    @Column(name = "updated_at", nullable = false) private Instant updatedAt;
     @Column(name = "deleted_at") private Instant deletedAt;
 
     protected MaintenanceRecord() { }
@@ -37,9 +36,7 @@ public class MaintenanceRecord {
             String serviceProvider, String notes) {
         this.id = UUID.randomUUID();
         this.vehicleId = vehicleId;
-        this.createdAt = Instant.now();
         update(category, title, serviceDate, mileageKm, cost, currencyCode, serviceProvider, notes);
-        this.createdAt = this.updatedAt;
     }
 
     public void update(MaintenanceCategory category, String title, Instant serviceDate,
@@ -53,10 +50,9 @@ public class MaintenanceRecord {
         this.currencyCode = currencyCode;
         this.serviceProvider = trim(serviceProvider);
         this.notes = trim(notes);
-        this.updatedAt = Instant.now();
     }
 
-    public void delete() { deletedAt = Instant.now(); updatedAt = deletedAt; }
+    public void delete() { deletedAt = Instant.now(); }
     private String trim(String value) { return value == null ? null : value.trim(); }
     public UUID getId() { return id; }
     public UUID getVehicleId() { return vehicleId; }
@@ -68,7 +64,5 @@ public class MaintenanceRecord {
     public String getCurrencyCode() { return currencyCode; }
     public String getServiceProvider() { return serviceProvider; }
     public String getNotes() { return notes; }
-    public Instant getCreatedAt() { return createdAt; }
-    public Instant getUpdatedAt() { return updatedAt; }
     public Instant getDeletedAt() { return deletedAt; }
 }
