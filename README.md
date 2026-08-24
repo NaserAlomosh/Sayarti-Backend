@@ -1002,11 +1002,17 @@ tokens, Firebase credentials, FCM tokens, email-provider credentials, and databa
 
 # 38. Docker
 
-- [ ] Create / Finalize Backend Dockerfile
-- [ ] Create / Finalize Docker Compose
-- [ ] Configure SQL Server Container
+- [x] Create / Finalize Backend Dockerfile
+- [x] Create / Finalize Docker Compose
+- [x] Configure SQL Server Container
 - [x] Verify Local Docker Environment
 - [x] Verify Testcontainers Docker Connectivity
+
+The local Docker Compose stack was manually verified with the SQL Server and API containers
+healthy, the database initialization service completed successfully, and the backend started with
+the `dev` profile against the Compose SQL Server database. A request to `/v3/api-docs` returned
+HTTP 200 with the Sayarti OpenAPI 3.1 document. This local verification does not constitute
+production verification or a production-readiness claim.
 
 Compatibility resource:
 
@@ -1213,9 +1219,9 @@ in the verified 178-test `./mvnw clean verify` build.
 - [x] Current Maven Build Passes
 - [x] Current Automated Tests Pass
 - [x] Current SQL Server Integration Tests Pass
-- [ ] Application Starts Using Development Profile Against Development SQL Server
+- [x] Application Starts Using Development Profile Against Development SQL Server
 - [ ] Application Starts Using Production Profile Configuration
-- [ ] Docker Compose Stack Verified
+- [x] Docker Compose Stack Verified
 - [ ] Production Verification
 
 Every new feature must rerun:
@@ -1263,7 +1269,7 @@ before its own checklist items are marked complete.
 - [x] Recent Activity
 - [x] Swagger
 - [ ] Full V1 Testing
-- [ ] Docker Compose
+- [x] Docker Compose
 - [ ] Production Verification
 
 ---
