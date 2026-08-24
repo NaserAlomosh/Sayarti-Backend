@@ -77,8 +77,9 @@ class HttpRequestLoggingFilterTest {
 
         filter.doFilter(request, new MockHttpServletResponse(), (req, res) -> { });
 
-        assertThat(messages()).singleElement().doesNotContain("jwt-secret", "cookie-secret",
-                "set-cookie-secret", "fcm-secret", "google-secret", "Authorization", "Cookie");
+        assertThat(messages()).singleElement().satisfies(message -> assertThat(message)
+                .doesNotContain("jwt-secret", "cookie-secret", "set-cookie-secret", "fcm-secret",
+                        "google-secret", "Authorization", "Cookie"));
     }
 
     @Test
@@ -92,10 +93,10 @@ class HttpRequestLoggingFilterTest {
 
         filter.doFilter(request, new MockHttpServletResponse(), (req, res) -> { });
 
-        assertThat(messages()).singleElement()
+        assertThat(messages()).singleElement().satisfies(message -> assertThat(message)
                 .contains("method=POST path=/api/v1/auth/login status=200")
                 .doesNotContain("query-jwt-secret", "query-password", "body-password", "123456",
-                        "body-token", "access_token", "refreshToken");
+                        "body-token", "access_token", "refreshToken"));
     }
 
     @Test
@@ -108,7 +109,8 @@ class HttpRequestLoggingFilterTest {
 
         assertThat(response.getHeader(HttpRequestLoggingFilter.REQUEST_ID_HEADER))
                 .matches("[0-9a-f-]{36}");
-        assertThat(messages()).singleElement().doesNotContain("unsafe token value");
+        assertThat(messages()).singleElement().satisfies(message ->
+                assertThat(message).doesNotContain("unsafe token value"));
     }
 
     private MockHttpServletRequest request(String method, String path) {
