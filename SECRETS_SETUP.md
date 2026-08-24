@@ -54,6 +54,8 @@ DB_USERNAME=
 DB_PASSWORD=
 DB_TRUST_SERVER_CERTIFICATE=true
 
+DEV_SEED_PASSWORD=
+
 JWT_ACCESS_SECRET=
 JWT_REFRESH_SECRET=
 JWT_ACCESS_EXPIRATION=
@@ -86,6 +88,49 @@ REMINDER_SCHEDULER_BATCH_SIZE=100
 ```
 
 Never commit a real `.env` file.
+
+---
+
+# Development Seed Password
+
+## Status
+
+- [ ] Configure locally when development seed users are wanted
+
+## Required For
+
+Logging in as the two development-only seed accounts created when, and only when, the Spring
+`dev` profile is active. It is not required in production or automated tests.
+
+## Environment Variable
+
+```env
+DEV_SEED_PASSWORD=
+```
+
+## Why It Is Needed
+
+The backend uses its configured `PasswordEncoder` to hash this value for newly created seed
+users. If it is missing or blank, user and related-data seeding is skipped with a safe log
+message. The value and its hash are never logged.
+
+## Where To Put It
+
+Set it in the local ignored `.env` file or export it in the development process environment,
+then activate the `dev` Spring profile. Never commit the value, and **never use this development
+password as a production credential or reuse a production password here**.
+
+## Backend Usage
+
+`application-dev.yml` maps the environment variable to the development-only seed initializer.
+The initializer is excluded from every profile other than `dev`.
+
+## Verification
+
+1. Start the backend with the `dev` profile and a nonblank `DEV_SEED_PASSWORD`.
+2. Confirm the safe initialization message appears without credential data.
+3. Log in to either documented development account using the configured local value.
+4. Start without the `dev` profile and confirm no development records are created.
 
 ---
 

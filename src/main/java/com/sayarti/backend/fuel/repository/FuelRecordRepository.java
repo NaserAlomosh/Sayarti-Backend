@@ -15,4 +15,6 @@ public interface FuelRecordRepository extends JpaRepository<FuelRecord, UUID>, J
     List<FuelRecord> findAllByVehicleIdAndDeletedAtIsNull(UUID vehicleId);
     List<FuelRecord> findByVehicleIdAndDeletedAtIsNullOrderByFilledAtDescIdDesc(
             UUID vehicleId, Pageable pageable);
+    boolean existsByVehicleIdAndOdometerKm(
+            UUID vehicleId, java.math.BigDecimal odometerKm);
 }

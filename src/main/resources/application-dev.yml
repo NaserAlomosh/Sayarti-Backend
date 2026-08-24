@@ -10,3 +10,7 @@ logging:
 springdoc:
   swagger-ui:
     enabled: true
+
+sayarti:
+  dev-seed:
+    password: ${DEV_SEED_PASSWORD:}
