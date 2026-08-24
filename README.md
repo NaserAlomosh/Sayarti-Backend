@@ -48,8 +48,16 @@ The Java 17 Maven/Spring Boot foundation currently includes:
 - Vehicle ownership enforcement for every reminder endpoint.
 - Authenticated device registration, FCM-token updates, and device deletion.
 - User ownership enforcement for every device endpoint.
+- Provider-neutral notification delivery, Firebase Admin SDK configuration, single-device and
+  user-device fan-out, invalid-token cleanup, and safe unavailable-provider fallback, all with
+  automated local coverage. Real-device Firebase delivery still requires owner credentials and
+  external verification.
+- Scheduled date- and mileage-based reminder processing with persisted successful-delivery state,
+  row locking, retry behavior, and duplicate-delivery prevention.
 - General vehicle statistics with vehicle ownership enforcement.
 - Fuel statistics with vehicle ownership enforcement.
+- Fuel distance, efficiency (km/L and L/100km), per-currency cost-per-kilometer,
+  monthly cost, total cost, and average-efficiency calculations.
 - Maintenance statistics with vehicle ownership enforcement.
 - Expense statistics with vehicle ownership enforcement.
 - True Vehicle Cost statistics with vehicle ownership enforcement.
@@ -95,8 +103,8 @@ Expense CRUD with ownership protection, Reminder CRUD and completion with owners
 protection, Device Management, General Vehicle Statistics, Fuel Statistics, Maintenance
 Statistics, Expense Statistics, True Vehicle Cost, and the Vehicle Dashboard are implemented
 with ownership protection and locally verified. Recent Vehicle Activity is also implemented with
-ownership protection and locally verified. Fuel Calculations and Energy Tracking are not
-implemented yet.
+ownership protection and locally verified. Fuel Calculations and the Reminder Scheduler are
+implemented and locally verified. Energy Tracking is not implemented.
 
 LOCAL email verification is implemented and locally verified. The provider-neutral SMTP
 adapter is implemented and automated-test covered. Real SMTP delivery remains
@@ -264,7 +272,7 @@ Database-backed integration tests use isolated Microsoft SQL Server instances th
 # 4. Flyway Database Migrations
 
 - [x] **Configure Flyway**
-- [ ] **Complete V1 Database Schema**
+- [x] **Complete V1 Database Schema**
 
 Required tables:
 
@@ -280,8 +288,10 @@ Required tables:
 - [x] `reminders`
 - [x] `devices`
 
-All schema changes must be performed through Flyway migrations.
-Test Any migration you created 
+All schema changes must be performed through Flyway migrations. The complete required V1 table
+set is validated by Hibernate and the Microsoft SQL Server Testcontainers integration suite in the
+verified 148-test build.
+
 ---
 
 # 5. Project Architecture
@@ -721,13 +731,18 @@ these vehicle fields.
 
 # 20. Fuel Calculations
 
-- [ ] Calculate Distance Between Refills
-- [ ] Calculate Fuel Efficiency
-- [ ] Calculate L/100km
-- [ ] Calculate Cost Per Kilometer
-- [ ] Calculate Monthly Fuel Cost
-- [ ] Calculate Total Fuel Cost
-- [ ] Calculate Average Fuel Efficiency
+- [x] Calculate Distance Between Refills
+- [x] Calculate Fuel Efficiency
+- [x] Calculate L/100km
+- [x] Calculate Cost Per Kilometer
+- [x] Calculate Monthly Fuel Cost
+- [x] Calculate Total Fuel Cost
+- [x] Calculate Average Fuel Efficiency
+
+Fuel calculations use eligible successive odometer distances. Aggregate efficiency is reported in
+km/L and L/100km; monetary totals, monthly cost, and cost per kilometer remain separated by
+currency. Unit and SQL Server integration tests cover normal, empty, insufficient-history,
+soft-delete, ordering, and multi-currency behavior.
 
 ---
 
@@ -783,8 +798,8 @@ these vehicle fields.
 
 # 25. Firebase Cloud Messaging
 
-- [ ] Configure Firebase Admin SDK
-- [ ] Create Notification Service
+- [x] Configure Firebase Admin SDK
+- [x] Create Notification Service
 - [ ] Send Notification To Device
 - [ ] Send Notification To User Devices
 - [ ] License Expiration Notification
@@ -793,15 +808,30 @@ these vehicle fields.
 - [ ] Mileage Reminder Notification
 - [ ] Custom Reminder Notification
 
+The Firebase infrastructure is implemented and locally automated-test covered: valid service
+account configuration creates the Firebase Admin components, the provider-neutral notification
+service supports one device and all registered devices for a user, permanently invalid tokens are
+removed, and an unavailable-provider fallback fails safely when Firebase is not configured.
+Provider tests construct Firebase messages without network access. The delivery-related items
+above remain incomplete because no repository evidence verifies delivery to a real Firebase
+project/device. License- and insurance-expiration notification completion is also not established.
+
 ---
 
 # 26. Reminder Scheduler
 
-- [ ] Enable Scheduling
-- [ ] Create Reminder Scheduler
-- [ ] Check Date-Based Reminders
-- [ ] Check Mileage-Based Reminders
-- [ ] Prevent Duplicate Notifications
+- [x] Enable Scheduling
+- [x] Create Reminder Scheduler
+- [x] Check Date-Based Reminders
+- [x] Check Mileage-Based Reminders
+- [x] Prevent Duplicate Notifications
+
+The scheduler polls due active reminders in bounded batches. The processor evaluates date and
+vehicle-mileage triggers, sends through the provider-neutral notification service, and records
+`notificationDeliveredAt` only after at least one successful device delivery. A pessimistic row
+lock plus persisted delivery state prevents duplicate processing; unsuccessful delivery remains
+retryable. Automated tests cover both trigger types, exclusions, successful and partial delivery,
+retry behavior, and repeated-run duplicate prevention.
 
 ---
 
@@ -1008,9 +1038,9 @@ api.version=1.44
 - [x] Create Fuel Record
 - [x] Update Fuel Record
 - [x] Delete Fuel Record
-- [ ] Fuel Efficiency
-- [ ] L/100km
-- [ ] Cost Per Kilometer
+- [x] Fuel Efficiency
+- [x] L/100km
+- [x] Cost Per Kilometer
 
 ## Maintenance Tests
 
@@ -1028,9 +1058,9 @@ api.version=1.44
 
 - [x] Create Reminder
 - [x] Complete Reminder
-- [ ] Date Reminder
-- [ ] Mileage Reminder
-- [ ] Duplicate Notification Prevention
+- [x] Date Reminder
+- [x] Mileage Reminder
+- [x] Duplicate Notification Prevention
 
 ## Statistics Tests
 
@@ -1127,13 +1157,13 @@ before its own checklist items are marked complete.
 - [x] Vehicle Management
 - [x] Vehicle Ownership Security
 - [x] Fuel Tracking
-- [ ] Fuel Calculations
+- [x] Fuel Calculations
 - [x] Maintenance
 - [x] Expenses
 - [x] Reminders
 - [x] Device Management
 - [ ] Firebase Push Notifications
-- [ ] Reminder Scheduler
+- [x] Reminder Scheduler
 - [x] Statistics
 - [x] Fuel Statistics
 - [x] True Vehicle Cost
