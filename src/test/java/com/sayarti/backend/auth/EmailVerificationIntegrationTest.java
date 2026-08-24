@@ -9,7 +9,10 @@ import com.sayarti.backend.AbstractIntegrationTest;
 import com.sayarti.backend.auth.repository.EmailVerificationOtpRepository;
 import com.sayarti.backend.auth.repository.RefreshTokenRepository;
 import com.sayarti.backend.user.repository.UserRepository;
+import jakarta.persistence.EntityManager;
 import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,16 +22,19 @@ import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.transaction.annotation.Transactional;
 
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
+@Transactional
 class EmailVerificationIntegrationTest extends AbstractIntegrationTest {
     @Autowired MockMvc mvc;
     @Autowired UserRepository users;
     @Autowired RefreshTokenRepository refreshTokens;
     @Autowired EmailVerificationOtpRepository otps;
     @Autowired JdbcTemplate jdbc;
+    @Autowired EntityManager entityManager;
 
     @BeforeEach
     void clear() {
@@ -98,9 +104,20 @@ class EmailVerificationIntegrationTest extends AbstractIntegrationTest {
     void expiredAndInvalidatedOtpsAreRejectedWithStableCodes() throws Exception {
         register("expired@example.com");
         String expiredCode = testEmailService.latestOtpFor("expired@example.com");
-        var expired = otps.findAll().get(0);
-        jdbc.update("UPDATE email_verification_otps SET expires_at = ? WHERE id = ?",
-                java.sql.Timestamp.from(Instant.now().minusSeconds(1)), expired.getId());
+        var expiredUser = users.findByEmailIgnoreCaseAndDeletedAtIsNull("expired@example.com")
+                .orElseThrow();
+        var expired = otps
+                .findFirstByUserIdAndVerifiedAtIsNullAndInvalidatedAtIsNullOrderByCreatedAtDesc(
+                        expiredUser.getId())
+                .orElseThrow();
+        Instant expiredAt = Instant.now().minusSeconds(60);
+        entityManager.flush();
+        assertThat(jdbc.update("UPDATE email_verification_otps SET expires_at = ? WHERE id = ?",
+                OffsetDateTime.ofInstant(expiredAt, ZoneOffset.UTC), expired.getId())).isOne();
+        entityManager.clear();
+        assertThat(jdbc.queryForObject(
+                "SELECT expires_at FROM email_verification_otps WHERE id = ?",
+                OffsetDateTime.class, expired.getId()).toInstant()).isBefore(Instant.now());
         mvc.perform(post("/api/v1/auth/verify-email").contentType(MediaType.APPLICATION_JSON)
                         .content("{\"email\":\"expired@example.com\",\"otp\":\"%s\"}"
                                 .formatted(expiredCode)))
@@ -125,9 +142,22 @@ class EmailVerificationIntegrationTest extends AbstractIntegrationTest {
     void resendAfterCooldownInvalidatesPreviousOtpAndOnlyReplacementWorks() throws Exception {
         register("replacement@example.com");
         String originalCode = testEmailService.latestOtpFor("replacement@example.com");
-        var original = otps.findAll().get(0);
-        jdbc.update("UPDATE email_verification_otps SET created_at = ? WHERE id = ?",
-                java.sql.Timestamp.from(Instant.now().minusSeconds(61)), original.getId());
+        var replacementUser = users
+                .findByEmailIgnoreCaseAndDeletedAtIsNull("replacement@example.com")
+                .orElseThrow();
+        var original = otps
+                .findFirstByUserIdAndVerifiedAtIsNullAndInvalidatedAtIsNullOrderByCreatedAtDesc(
+                        replacementUser.getId())
+                .orElseThrow();
+        Instant cooldownElapsedAt = Instant.now().minusSeconds(300);
+        entityManager.flush();
+        assertThat(jdbc.update("UPDATE email_verification_otps SET created_at = ? WHERE id = ?",
+                OffsetDateTime.ofInstant(cooldownElapsedAt, ZoneOffset.UTC), original.getId()))
+                .isOne();
+        entityManager.clear();
+        assertThat(jdbc.queryForObject(
+                "SELECT created_at FROM email_verification_otps WHERE id = ?",
+                OffsetDateTime.class, original.getId()).toInstant()).isBefore(Instant.now());
 
         mvc.perform(post("/api/v1/auth/resend-verification")
                         .contentType(MediaType.APPLICATION_JSON)
