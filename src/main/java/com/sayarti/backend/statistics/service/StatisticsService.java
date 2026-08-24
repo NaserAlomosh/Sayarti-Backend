@@ -201,8 +201,8 @@ public class StatisticsService {
                                 : null))
                 .toList();
 
-        return new TrueVehicleCostResponse(vehicleId, vehicle.getCurrentMileage(), fuelTotals,
-                maintenanceTotals, expenseTotals, vehicleTotals, monthly, rates);
+        return new TrueVehicleCostResponse(vehicleId, BigDecimal.valueOf(vehicle.getCurrentMileage()),
+                fuelTotals, maintenanceTotals, expenseTotals, vehicleTotals, monthly, rates);
     }
 
     private List<CurrencyAverageResponse> averages(List<MaintenanceRecord> records) {
