@@ -79,7 +79,7 @@ Local verification has completed successfully with:
 ./mvnw clean verify
 
 BUILD SUCCESS
-Tests run: 148
+Tests run: 149
 Failures: 0
 Errors: 0
 Skipped: 0
@@ -290,7 +290,7 @@ Required tables:
 
 All schema changes must be performed through Flyway migrations. The complete required V1 table
 set is validated by Hibernate and the Microsoft SQL Server Testcontainers integration suite in the
-verified 148-test build.
+verified 149-test build.
 
 ---
 
@@ -898,8 +898,14 @@ excludes soft-deleted records and incomplete reminders. The optional `limit` par
 
 # 34. JPA Auditing
 
-- [ ] Enable JPA Auditing
-- [ ] Create Base Auditable Entity
+- [x] Enable JPA Auditing
+- [x] Create Base Auditable Entity
+
+Spring Data JPA auditing is enabled. The shared `BaseAuditableEntity` manages `createdAt` and
+`updatedAt` as `Instant` timestamps while remaining compatible with the existing SQL Server
+`datetimeoffset` columns. `createdAt` remains unchanged after entity creation, while `updatedAt`
+is updated automatically whenever an entity is modified. `JpaAuditingIntegrationTest` verifies
+this behavior using Microsoft SQL Server Testcontainers.
 
 ---
 
@@ -1108,7 +1114,7 @@ Current verified baseline:
 
 ```text
 BUILD SUCCESS
-Tests run: 148
+Tests run: 149
 Failures: 0
 Errors: 0
 Skipped: 0
