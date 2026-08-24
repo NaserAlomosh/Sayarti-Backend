@@ -3,6 +3,8 @@ package com.sayarti.backend.expense.service;
 import com.sayarti.backend.common.exception.BusinessValidationException;
 import com.sayarti.backend.common.exception.ErrorCode;
 import com.sayarti.backend.common.exception.ResourceNotFoundException;
+import com.sayarti.backend.common.query.ListQuerySupport;
+import com.sayarti.backend.common.response.PageResponse;
 import com.sayarti.backend.expense.dto.CreateExpenseRequest;
 import com.sayarti.backend.expense.dto.ExpenseResponse;
 import com.sayarti.backend.expense.dto.UpdateExpenseRequest;
@@ -14,13 +16,18 @@ import com.sayarti.backend.user.entity.User;
 import com.sayarti.backend.user.repository.UserRepository;
 import com.sayarti.backend.vehicle.repository.VehicleRepository;
 import java.util.List;
+import java.util.Map;
+import java.time.Instant;
 import java.util.Locale;
 import java.util.UUID;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class ExpenseService {
+    private static final Map<String, String> SORT_FIELDS = Map.of(
+            "expenseDate", "expenseDate", "createdAt", "createdAt", "amount", "amount", "title", "title");
     private final ExpenseRepository expenses;
     private final VehicleRepository vehicles;
     private final UserRepository users;
@@ -46,12 +53,22 @@ public class ExpenseService {
     }
 
     @Transactional(readOnly = true)
-    public List<ExpenseResponse> list(AuthenticatedUser user, UUID vehicleId) {
+    public PageResponse<ExpenseResponse> list(AuthenticatedUser user, UUID vehicleId, int page, int size,
+            String sortBy, String sortDirection, Instant from, Instant to) {
         ownedVehicle(user, vehicleId);
-        return expenses
-                .findAllByVehicleIdAndDeletedAtIsNullOrderByExpenseDateDescCreatedAtDescIdDesc(
-                        vehicleId)
-                .stream().map(ExpenseResponse::from).toList();
+        ListQuerySupport.validateRange(from, to);
+        var pageable = ListQuerySupport.pageable(page, size, sortBy, sortDirection,
+                "expenseDate", Sort.Direction.DESC, SORT_FIELDS, "createdAt");
+        var result = expenses.findAll((root, query, cb) -> {
+            var predicate = cb.and(cb.equal(root.get("vehicleId"), vehicleId),
+                    cb.isNull(root.get("deletedAt")));
+            if (from != null) predicate = cb.and(predicate, cb.greaterThanOrEqualTo(
+                    root.<Instant>get("expenseDate"), from));
+            if (to != null) predicate = cb.and(predicate, cb.lessThanOrEqualTo(
+                    root.<Instant>get("expenseDate"), to));
+            return predicate;
+        }, pageable).map(ExpenseResponse::from);
+        return PageResponse.from(result);
     }
 
     @Transactional(readOnly = true)

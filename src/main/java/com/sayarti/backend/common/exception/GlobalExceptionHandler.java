@@ -16,6 +16,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 @RestControllerAdvice
@@ -48,6 +49,13 @@ public class GlobalExceptionHandler {
             HttpMessageNotReadableException exception) {
         return response(HttpStatus.BAD_REQUEST, ErrorCode.VALIDATION_ERROR,
                 "Request body is malformed or contains an invalid value", null);
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    ResponseEntity<ErrorResponse> handleTypeMismatch(MethodArgumentTypeMismatchException exception) {
+        return response(HttpStatus.BAD_REQUEST, ErrorCode.VALIDATION_ERROR,
+                "Query parameter has an invalid value",
+                Map.of(exception.getName(), "Must use the documented format"));
     }
 
     @ExceptionHandler(ApiException.class)

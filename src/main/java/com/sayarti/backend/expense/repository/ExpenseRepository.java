@@ -5,9 +5,10 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.domain.Pageable;
 
-public interface ExpenseRepository extends JpaRepository<Expense, UUID> {
+public interface ExpenseRepository extends JpaRepository<Expense, UUID>, JpaSpecificationExecutor<Expense> {
     List<Expense> findAllByVehicleIdAndDeletedAtIsNullOrderByExpenseDateDescCreatedAtDescIdDesc(
             UUID vehicleId);
     Optional<Expense> findByIdAndVehicleIdAndDeletedAtIsNull(UUID id, UUID vehicleId);

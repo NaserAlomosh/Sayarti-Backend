@@ -3,6 +3,8 @@ package com.sayarti.backend.fuel.service;
 import com.sayarti.backend.common.exception.BusinessValidationException;
 import com.sayarti.backend.common.exception.ErrorCode;
 import com.sayarti.backend.common.exception.ResourceNotFoundException;
+import com.sayarti.backend.common.query.ListQuerySupport;
+import com.sayarti.backend.common.response.PageResponse;
 import com.sayarti.backend.fuel.dto.CreateFuelRecordRequest;
 import com.sayarti.backend.fuel.dto.FuelCostSummary;
 import com.sayarti.backend.fuel.dto.FuelRecordResponse;
@@ -18,17 +20,22 @@ import com.sayarti.backend.vehicle.entity.PowertrainType;
 import com.sayarti.backend.vehicle.entity.Vehicle;
 import com.sayarti.backend.vehicle.repository.VehicleRepository;
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.math.RoundingMode;
 import java.time.YearMonth;
 import java.util.List;
+import java.util.Map;
 import java.util.Locale;
 import java.util.UUID;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class FuelRecordService {
     private static final int MONEY_SCALE = 4;
+    private static final Map<String, String> SORT_FIELDS = Map.of(
+            "filledAt", "filledAt", "createdAt", "createdAt", "odometerKm", "odometerKm", "totalCost", "totalCost");
     private final FuelRecordRepository records;
     private final VehicleRepository vehicles;
     private final UserRepository users;
@@ -65,10 +72,22 @@ public class FuelRecordService {
     }
 
     @Transactional(readOnly = true)
-    public List<FuelRecordResponse> list(AuthenticatedUser authenticated, UUID vehicleId) {
+    public PageResponse<FuelRecordResponse> list(AuthenticatedUser authenticated, UUID vehicleId, int page, int size,
+            String sortBy, String sortDirection, Instant from, Instant to) {
         ownedVehicle(authenticated, vehicleId);
-        return records.findAllByVehicleIdAndDeletedAtIsNullOrderByFilledAtDescCreatedAtDesc(vehicleId)
-                .stream().map(FuelRecordResponse::from).toList();
+        ListQuerySupport.validateRange(from, to);
+        var pageable = ListQuerySupport.pageable(page, size, sortBy, sortDirection,
+                "filledAt", Sort.Direction.DESC, SORT_FIELDS, "createdAt");
+        var result = records.findAll((root, query, cb) -> {
+            var predicate = cb.and(cb.equal(root.get("vehicleId"), vehicleId),
+                    cb.isNull(root.get("deletedAt")));
+            if (from != null) predicate = cb.and(predicate, cb.greaterThanOrEqualTo(
+                    root.<Instant>get("filledAt"), from));
+            if (to != null) predicate = cb.and(predicate, cb.lessThanOrEqualTo(
+                    root.<Instant>get("filledAt"), to));
+            return predicate;
+        }, pageable).map(FuelRecordResponse::from);
+        return PageResponse.from(result);
     }
 
     @Transactional(readOnly = true)

@@ -1,6 +1,7 @@
 package com.sayarti.backend.maintenance.controller;
 
 import com.sayarti.backend.common.response.ApiResponse;
+import com.sayarti.backend.common.response.PageResponse;
 import com.sayarti.backend.maintenance.dto.CreateMaintenanceRecordRequest;
 import com.sayarti.backend.maintenance.dto.DeleteMaintenanceRecordResponse;
 import com.sayarti.backend.maintenance.dto.MaintenanceRecordResponse;
@@ -13,7 +14,9 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import java.util.List;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import java.time.Instant;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -24,9 +27,12 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.validation.annotation.Validated;
 
+@Validated
 @RestController
 @RequestMapping("/api/v1/vehicles/{vehicleId}/maintenance-records")
 @Tag(name = "Maintenance", description = "Authenticated vehicle maintenance CRUD. The vehicle "
@@ -65,13 +71,22 @@ public class MaintenanceRecordController {
     }
 
     @GetMapping
-    @Operation(summary = "Get maintenance history", description = "Returns active records newest "
-            + "service date first, with creation time and identifier tie-breakers.")
-    public ApiResponse<List<MaintenanceRecordResponse>> list(
-            @AuthenticationPrincipal AuthenticatedUser user,
-            @Parameter(description = "Owned active vehicle identifier", required = true)
-            @PathVariable UUID vehicleId) {
-        return ApiResponse.success(service.list(user, vehicleId));
+    @Operation(summary = "List active maintenance records", description = "Returns an active-only paginated "
+            + "history. Defaults to serviceDate descending. Supported sortBy values: serviceDate, createdAt, mileageKm, cost; "
+            + "sortDirection is asc or desc and id is the deterministic tie-breaker. Optional from "
+            + "and to are inclusive ISO-8601 UTC-aware instants applied to serviceDate; from must not "
+            + "exceed to. Filters compose with ownership, soft deletion, sorting, and pagination. "
+            + "Empty pages are successful; inaccessible vehicles return VEHICLE_NOT_FOUND.")
+    public ApiResponse<PageResponse<MaintenanceRecordResponse>> list(
+            @AuthenticationPrincipal AuthenticatedUser user, @PathVariable UUID vehicleId,
+            @RequestParam(defaultValue = "0") @Min(0) int page,
+            @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size,
+            @RequestParam(required = false) String sortBy,
+            @RequestParam(required = false) String sortDirection,
+            @RequestParam(required = false) Instant from,
+            @RequestParam(required = false) Instant to) {
+        return ApiResponse.success(service.list(user, vehicleId, page, size, sortBy,
+                sortDirection, from, to));
     }
 
     @GetMapping("/{maintenanceRecordId}")

@@ -3,6 +3,8 @@ package com.sayarti.backend.vehicle.service;
 import com.sayarti.backend.common.exception.BusinessValidationException;
 import com.sayarti.backend.common.exception.ErrorCode;
 import com.sayarti.backend.common.exception.ResourceNotFoundException;
+import com.sayarti.backend.common.query.ListQuerySupport;
+import com.sayarti.backend.common.response.PageResponse;
 import com.sayarti.backend.security.jwt.AuthenticatedUser;
 import com.sayarti.backend.vehicle.dto.CreateVehicleRequest;
 import com.sayarti.backend.vehicle.dto.UpdateVehicleRequest;
@@ -14,8 +16,10 @@ import com.sayarti.backend.vehicle.repository.VehicleRepository;
 import java.math.BigDecimal;
 import java.time.Year;
 import java.util.EnumSet;
+import java.util.Map;
 import java.util.List;
 import java.util.UUID;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,6 +27,9 @@ import org.springframework.transaction.annotation.Transactional;
 public class VehicleService {
     private static final EnumSet<FuelType> GASOLINE_FUELS = EnumSet.of(FuelType.GASOLINE_90,
             FuelType.GASOLINE_95, FuelType.GASOLINE_98, FuelType.OTHER);
+    private static final Map<String, String> SORT_FIELDS = Map.of(
+            "createdAt", "createdAt", "brand", "brand", "model", "model",
+            "year", "year", "currentMileage", "currentMileage");
     private final VehicleRepository vehicles;
 
     public VehicleService(VehicleRepository vehicles) {
@@ -44,9 +51,14 @@ public class VehicleService {
     }
 
     @Transactional(readOnly = true)
-    public List<VehicleResponse> list(AuthenticatedUser user) {
-        return vehicles.findAllByUserIdAndDeletedAtIsNullOrderByCreatedAtDesc(user.id()).stream()
-                .map(VehicleResponse::from).toList();
+    public PageResponse<VehicleResponse> list(AuthenticatedUser user, int page, int size,
+            String sortBy, String sortDirection) {
+        var pageable = ListQuerySupport.pageable(page, size, sortBy, sortDirection,
+                "createdAt", Sort.Direction.DESC, SORT_FIELDS);
+        var result = vehicles.findAll((root, query, cb) -> cb.and(
+                cb.equal(root.get("userId"), user.id()), cb.isNull(root.get("deletedAt"))), pageable)
+                .map(VehicleResponse::from);
+        return PageResponse.from(result);
     }
 
     @Transactional(readOnly = true)

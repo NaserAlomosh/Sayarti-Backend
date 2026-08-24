@@ -105,8 +105,8 @@ class VehicleIntegrationTest extends AbstractIntegrationTest {
         UUID id = id(create(owner, gasoline()).andReturn().getResponse().getContentAsString());
         create(other, electric());
         mvc.perform(get("/api/v1/vehicles").header("Authorization", bearer(owner)))
-                .andExpect(status().isOk()).andExpect(jsonPath("$.data.length()").value(1))
-                .andExpect(jsonPath("$.data[0].id").value(id.toString()));
+                .andExpect(status().isOk()).andExpect(jsonPath("$.data.content.length()").value(1))
+                .andExpect(jsonPath("$.data.content[0].id").value(id.toString()));
         mvc.perform(get("/api/v1/vehicles/{id}", id).header("Authorization", bearer(owner)))
                 .andExpect(status().isOk());
         mvc.perform(patch("/api/v1/vehicles/{id}", id).header("Authorization", bearer(owner))
@@ -134,9 +134,29 @@ class VehicleIntegrationTest extends AbstractIntegrationTest {
                 .andExpect(status().isOk());
         assertThat(vehicles.findById(id).orElseThrow().getDeletedAt()).isNotNull();
         mvc.perform(get("/api/v1/vehicles").header("Authorization", bearer(owner)))
-                .andExpect(jsonPath("$.data.length()").value(0));
+                .andExpect(jsonPath("$.data.content.length()").value(0));
         mvc.perform(get("/api/v1/vehicles/{id}", id).header("Authorization", bearer(owner)))
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void vehicleSortingValidationAndPaginationCompose() throws Exception {
+        Session owner = session("vehicle-query@example.com");
+        UUID lincoln = id(create(owner, gasoline()).andReturn().getResponse().getContentAsString());
+        UUID electric = id(create(owner, electric()).andReturn().getResponse().getContentAsString());
+        mvc.perform(get("/api/v1/vehicles?sortBy=brand&sortDirection=asc&size=1&page=0")
+                        .header("Authorization", bearer(owner)))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.data.content.length()").value(1))
+                .andExpect(jsonPath("$.data.totalElements").value(2))
+                .andExpect(jsonPath("$.data.content[0].id").value(lincoln.toString()));
+        mvc.perform(get("/api/v1/vehicles?sortBy=brand&sortDirection=desc")
+                        .header("Authorization", bearer(owner)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.content[0].id").value(electric.toString()));
+        mvc.perform(get("/api/v1/vehicles?sortBy=deletedAt")
+                        .header("Authorization", bearer(owner)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error.code").value("VALIDATION_ERROR"));
     }
 
     private org.springframework.test.web.servlet.ResultActions create(Session session, String body)

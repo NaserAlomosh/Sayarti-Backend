@@ -81,9 +81,9 @@ class ExpenseIntegrationTest extends AbstractIntegrationTest {
                 "2026-01-01T00:00:00Z")).andReturn().getResponse().getContentAsString());
         mvc.perform(get(url(vehicleId)).header("Authorization", bearer(session)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data[0].id").value(secondTie.toString()))
-                .andExpect(jsonPath("$.data[1].id").value(firstTie.toString()))
-                .andExpect(jsonPath("$.data[2].id").value(old.toString()));
+                .andExpect(jsonPath("$.data.content[0].id").value(secondTie.toString()))
+                .andExpect(jsonPath("$.data.content[1].id").value(firstTie.toString()))
+                .andExpect(jsonPath("$.data.content[2].id").value(old.toString()));
     }
 
     @Test
@@ -111,7 +111,7 @@ class ExpenseIntegrationTest extends AbstractIntegrationTest {
         mvc.perform(delete(url(vehicleId) + "/" + recordId)
                         .header("Authorization", bearer(session))).andExpect(status().isOk());
         mvc.perform(get(url(vehicleId)).header("Authorization", bearer(session)))
-                .andExpect(jsonPath("$.data.length()").value(0));
+                .andExpect(jsonPath("$.data.content.length()").value(0));
         for (var request : new org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder[] {
                 get(url(vehicleId) + "/" + recordId),
                 patch(url(vehicleId) + "/" + recordId).contentType(MediaType.APPLICATION_JSON)
@@ -210,6 +210,32 @@ class ExpenseIntegrationTest extends AbstractIntegrationTest {
                 """, Integer.class);
         assertThat(checkCount).isEqualTo(3);
         assertThat(indexCount).isEqualTo(5);
+    }
+
+    @Test
+    void historyQueryValidationAndEmptyRangesUseStandardResponses() throws Exception {
+        Session session = session("query-expense@example.com");
+        UUID vehicleId = vehicle(session, 10000);
+        mvc.perform(get(url(vehicleId) + "?from=2026-01-01T00:00:00Z&to=2026-01-01T00:00:00Z"
+                        + "&sortBy=expenseDate&sortDirection=asc&page=0&size=1")
+                        .header("Authorization", bearer(session)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.content.length()").value(0))
+                .andExpect(jsonPath("$.data.totalElements").value(0));
+        mvc.perform(get(url(vehicleId) + "?from=2026-01-02T00:00:00Z&to=2026-01-01T00:00:00Z")
+                        .header("Authorization", bearer(session)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error.code").value("VALIDATION_ERROR"));
+        mvc.perform(get(url(vehicleId) + "?from=not-an-instant")
+                        .header("Authorization", bearer(session)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error.code").value("VALIDATION_ERROR"));
+        mvc.perform(get(url(vehicleId) + "?sortBy=deletedAt")
+                        .header("Authorization", bearer(session)))
+                .andExpect(status().isBadRequest());
+        mvc.perform(get(url(vehicleId) + "?sortDirection=sideways")
+                        .header("Authorization", bearer(session)))
+                .andExpect(status().isBadRequest());
     }
 
     private org.springframework.test.web.servlet.ResultActions create(
