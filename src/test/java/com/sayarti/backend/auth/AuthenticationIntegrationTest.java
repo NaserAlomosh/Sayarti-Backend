@@ -1,6 +1,7 @@
 package com.sayarti.backend.auth;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -185,5 +186,87 @@ class AuthenticationIntegrationTest extends AbstractIntegrationTest {
                         """))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.error.code").value("AUTH_INVALID_CREDENTIALS"));
+    }
+
+    @Test
+    void rotatesRefreshTokensStoresOnlyHashesAndRejectsReuse() throws Exception {
+        register("rotation@example.com");
+        User user = users.findByEmailIgnoreCaseAndDeletedAtIsNull("rotation@example.com")
+                .orElseThrow();
+        user.verifyEmail();
+        users.saveAndFlush(user);
+
+        JsonNode login = body(mvc.perform(post("/api/v1/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"email":"rotation@example.com","password":"StrongPass1"}
+                                """))
+                .andExpect(status().isOk()).andReturn()).path("data");
+        String original = login.path("refreshToken").asText();
+        assertThat(jdbc.queryForList("SELECT token_hash FROM refresh_tokens", String.class))
+                .noneMatch(original::equals);
+
+        JsonNode rotated = body(mvc.perform(post("/api/v1/auth/refresh")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"refreshToken\":\"%s\"}".formatted(original)))
+                .andExpect(status().isOk()).andReturn()).path("data");
+        assertThat(rotated.path("refreshToken").asText()).isNotEqualTo(original);
+        assertThat(tokens.findAll()).hasSize(2);
+        assertThat(tokens.findAll()).filteredOn(token -> token.getRevokedAt() != null)
+                .hasSize(1);
+
+        mvc.perform(post("/api/v1/auth/refresh").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"refreshToken\":\"%s\"}".formatted(original)))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.error.code").value("AUTH_REFRESH_TOKEN_REUSED"));
+    }
+
+    @Test
+    void logoutRevokesRefreshTokenAndPreventsFurtherUse() throws Exception {
+        register("logout@example.com");
+        User user = users.findByEmailIgnoreCaseAndDeletedAtIsNull("logout@example.com")
+                .orElseThrow();
+        user.verifyEmail();
+        users.saveAndFlush(user);
+        String refreshToken = body(mvc.perform(post("/api/v1/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"email\":\"logout@example.com\",\"password\":\"StrongPass1\"}"))
+                .andExpect(status().isOk()).andReturn()).at("/data/refreshToken").asText();
+
+        mvc.perform(post("/api/v1/auth/logout").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"refreshToken\":\"%s\"}".formatted(refreshToken)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.revoked").value(true));
+        mvc.perform(post("/api/v1/auth/refresh").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"refreshToken\":\"%s\"}".formatted(refreshToken)))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.error.code").value("AUTH_REFRESH_TOKEN_REUSED"));
+    }
+
+    @Test
+    void googleAuthenticationCreatesAndReusesVerifiedSubjectButNeverLinksLocalEmail()
+            throws Exception {
+        when(googleTokens.verify("new-google-token")).thenReturn(new GoogleIdentity(
+                "google-subject", "google@example.com", "Google", "User"));
+        mvc.perform(post("/api/v1/auth/google").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"idToken\":\"new-google-token\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.user.emailVerified").value(true));
+        assertThat(users.count()).isOne();
+
+        when(googleTokens.verify("returning-google-token")).thenReturn(new GoogleIdentity(
+                "google-subject", "google@example.com", "Updated", "Name"));
+        mvc.perform(post("/api/v1/auth/google").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"idToken\":\"returning-google-token\"}"))
+                .andExpect(status().isOk());
+        assertThat(users.count()).isOne();
+
+        register("local@example.com");
+        when(googleTokens.verify("collision-token")).thenReturn(new GoogleIdentity(
+                "different-subject", "local@example.com", "Local", "Collision"));
+        mvc.perform(post("/api/v1/auth/google").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"idToken\":\"collision-token\"}"))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.error.code").value("AUTH_ACCOUNT_LINKING_REQUIRED"));
     }
 }
