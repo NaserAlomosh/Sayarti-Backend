@@ -18,8 +18,6 @@ import com.sayarti.backend.user.repository.UserRepository;
 import com.sayarti.backend.vehicle.repository.VehicleRepository;
 import java.util.UUID;
 import java.util.stream.Stream;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -41,16 +39,6 @@ class FuelRecordIntegrationTest extends AbstractIntegrationTest {
     @Autowired RefreshTokenRepository tokens;
     @Autowired EmailVerificationOtpRepository otps;
     @Autowired UserRepository users;
-
-    @BeforeEach
-    @AfterEach
-    void clearDatabase() {
-        fuelRecords.deleteAll();
-        vehicles.deleteAll();
-        tokens.deleteAll();
-        otps.deleteAll();
-        users.deleteAll();
-    }
 
     static Stream<String> liquidPowertrains() {
         return Stream.of("GASOLINE", "DIESEL", "HYBRID", "PLUG_IN_HYBRID");

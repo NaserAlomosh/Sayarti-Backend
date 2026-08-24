@@ -14,8 +14,6 @@ import com.sayarti.backend.expense.repository.ExpenseRepository;
 import com.sayarti.backend.user.repository.UserRepository;
 import com.sayarti.backend.vehicle.repository.VehicleRepository;
 import java.util.UUID;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -35,16 +33,6 @@ class ExpenseStatisticsIntegrationTest extends AbstractIntegrationTest {
     @Autowired RefreshTokenRepository tokens;
     @Autowired EmailVerificationOtpRepository otps;
     @Autowired UserRepository users;
-
-    @BeforeEach
-    @AfterEach
-    void clearDatabase() {
-        expenses.deleteAll();
-        vehicles.deleteAll();
-        tokens.deleteAll();
-        otps.deleteAll();
-        users.deleteAll();
-    }
 
     @Test
     void calculatesCostsAveragesLatestRecordAndDeterministicCategoryBreakdown() throws Exception {

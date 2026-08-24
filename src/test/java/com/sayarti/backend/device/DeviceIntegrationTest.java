@@ -18,8 +18,6 @@ import com.sayarti.backend.device.repository.DeviceRepository;
 import com.sayarti.backend.user.entity.User;
 import com.sayarti.backend.user.repository.UserRepository;
 import java.util.UUID;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -42,14 +40,6 @@ class DeviceIntegrationTest extends AbstractIntegrationTest {
     @Autowired EmailVerificationOtpRepository otps;
     @Autowired UserRepository users;
     @Autowired JdbcTemplate jdbc;
-
-    @BeforeEach @AfterEach
-    void clearDatabase() {
-        devices.deleteAll();
-        tokens.deleteAll();
-        otps.deleteAll();
-        users.deleteAll();
-    }
 
     @Test
     void registerIsIdempotentAndHandlesRotation() throws Exception {

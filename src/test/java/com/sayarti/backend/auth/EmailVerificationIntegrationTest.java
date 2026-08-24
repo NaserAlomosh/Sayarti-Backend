@@ -13,7 +13,6 @@ import jakarta.persistence.EntityManager;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -35,13 +34,6 @@ class EmailVerificationIntegrationTest extends AbstractIntegrationTest {
     @Autowired EmailVerificationOtpRepository otps;
     @Autowired JdbcTemplate jdbc;
     @Autowired EntityManager entityManager;
-
-    @BeforeEach
-    void clear() {
-        refreshTokens.deleteAll();
-        otps.deleteAll();
-        users.deleteAll();
-    }
 
     @Test
     void registrationStoresOnlyHashAndValidOtpCreatesSessionOnce() throws Exception {

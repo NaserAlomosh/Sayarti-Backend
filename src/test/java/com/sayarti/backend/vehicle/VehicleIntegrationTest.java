@@ -16,8 +16,6 @@ import com.sayarti.backend.auth.repository.RefreshTokenRepository;
 import com.sayarti.backend.user.repository.UserRepository;
 import com.sayarti.backend.vehicle.repository.VehicleRepository;
 import java.util.UUID;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -36,12 +34,6 @@ class VehicleIntegrationTest extends AbstractIntegrationTest {
     @Autowired RefreshTokenRepository tokens;
     @Autowired EmailVerificationOtpRepository otps;
     @Autowired UserRepository users;
-
-    @BeforeEach
-    @AfterEach
-    void clearDatabase() {
-        vehicles.deleteAll(); tokens.deleteAll(); otps.deleteAll(); users.deleteAll();
-    }
 
     @Test
     void createsEverySupportedVehicleForAuthenticatedOwner() throws Exception {
