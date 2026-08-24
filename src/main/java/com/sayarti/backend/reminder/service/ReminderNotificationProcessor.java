@@ -4,6 +4,7 @@ import com.sayarti.backend.notification.NotificationCommand;
 import com.sayarti.backend.notification.NotificationService;
 import com.sayarti.backend.notification.UserNotificationResult;
 import com.sayarti.backend.reminder.entity.Reminder;
+import com.sayarti.backend.reminder.entity.ReminderCategory;
 import com.sayarti.backend.reminder.entity.ReminderTriggerType;
 import com.sayarti.backend.reminder.repository.ReminderRepository;
 import com.sayarti.backend.vehicle.entity.Vehicle;
@@ -45,7 +46,7 @@ public class ReminderNotificationProcessor {
         this(reminders, vehicles, notifications, clock, null, null);
     }
 
-    private ReminderNotificationProcessor(ReminderRepository reminders, VehicleRepository vehicles,
+    ReminderNotificationProcessor(ReminderRepository reminders, VehicleRepository vehicles,
             NotificationService notifications, Clock clock,
             com.sayarti.backend.user.repository.UserRepository users,
             com.sayarti.backend.i18n.MessageLocalizer localizer) {
@@ -94,6 +95,14 @@ public class ReminderNotificationProcessor {
     }
 
     private String notificationBody(Reminder reminder, Vehicle vehicle, Locale locale) {
+        if (reminder.getCategory() == ReminderCategory.LICENSE_EXPIRATION) {
+            return localized("notification.reminder.license-expiration",
+                    "Your vehicle license expiration reminder is now due.", locale);
+        }
+        if (reminder.getCategory() == ReminderCategory.INSURANCE_EXPIRATION) {
+            return localized("notification.reminder.insurance-expiration",
+                    "Your vehicle insurance expiration reminder is now due.", locale);
+        }
         if (reminder.getDescription() != null && !reminder.getDescription().isBlank()) {
             return reminder.getDescription();
         }
@@ -107,5 +116,9 @@ public class ReminderNotificationProcessor {
                         "Vehicle mileage has reached {0} km.", locale,
                         reminder.getTargetMileage())
                 : localizer.text("notification.reminder.due", "This vehicle reminder is now due.", locale);
+    }
+
+    private String localized(String key, String englishFallback, Locale locale) {
+        return localizer == null ? englishFallback : localizer.text(key, englishFallback, locale);
     }
 }

@@ -7,6 +7,7 @@ import com.sayarti.backend.reminder.dto.CreateReminderRequest;
 import com.sayarti.backend.reminder.dto.ReminderResponse;
 import com.sayarti.backend.reminder.dto.UpdateReminderRequest;
 import com.sayarti.backend.reminder.entity.Reminder;
+import com.sayarti.backend.reminder.entity.ReminderCategory;
 import com.sayarti.backend.reminder.entity.ReminderTriggerType;
 import com.sayarti.backend.reminder.repository.ReminderRepository;
 import com.sayarti.backend.security.jwt.AuthenticatedUser;
@@ -31,7 +32,8 @@ public class ReminderService {
     public ReminderResponse create(AuthenticatedUser user, UUID vehicleId,
             CreateReminderRequest request) {
         ownedVehicle(user, vehicleId);
-        validateTargets(request.triggerType(), request.targetDate(), request.targetMileage());
+        validateTargets(request.category(), request.triggerType(), request.targetDate(),
+                request.targetMileage());
         Reminder reminder = new Reminder(vehicleId, request.category(), request.title(),
                 request.description(), request.triggerType(), request.targetDate(),
                 request.targetMileage());
@@ -63,8 +65,9 @@ public class ReminderService {
                 : value(request.targetDate(), reminder.getTargetDate());
         Long targetMileage = triggerChanged ? request.targetMileage()
                 : value(request.targetMileage(), reminder.getTargetMileage());
-        validateTargets(trigger, targetDate, targetMileage);
-        reminder.update(value(request.category(), reminder.getCategory()),
+        ReminderCategory category = value(request.category(), reminder.getCategory());
+        validateTargets(category, trigger, targetDate, targetMileage);
+        reminder.update(category,
                 value(request.title(), reminder.getTitle()),
                 value(request.description(), reminder.getDescription()), trigger, targetDate,
                 targetMileage);
@@ -85,15 +88,20 @@ public class ReminderService {
         activeReminder(vehicleId, reminderId).delete();
     }
 
-    private void validateTargets(ReminderTriggerType trigger, Instant date, Long mileage) {
+    private void validateTargets(ReminderCategory category, ReminderTriggerType trigger,
+            Instant date, Long mileage) {
         boolean invalidDate = trigger == ReminderTriggerType.DATE
                 && (date == null || mileage != null);
         boolean invalidMileage = trigger == ReminderTriggerType.MILEAGE
                 && (mileage == null || mileage < 0 || date != null);
-        if (invalidDate || invalidMileage) {
+        boolean expirationMustBeDate = (category == ReminderCategory.LICENSE_EXPIRATION
+                || category == ReminderCategory.INSURANCE_EXPIRATION)
+                && trigger != ReminderTriggerType.DATE;
+        if (invalidDate || invalidMileage || expirationMustBeDate) {
             throw new BusinessValidationException(ErrorCode.INVALID_REMINDER,
                     "DATE reminders require only targetDate; MILEAGE reminders require only "
-                            + "a non-negative targetMileage");
+                            + "a non-negative targetMileage; license and insurance expiration "
+                            + "reminders must be date-based");
         }
     }
 
