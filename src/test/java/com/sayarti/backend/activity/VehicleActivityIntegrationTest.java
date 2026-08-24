@@ -18,8 +18,6 @@ import com.sayarti.backend.reminder.repository.ReminderRepository;
 import com.sayarti.backend.user.repository.UserRepository;
 import com.sayarti.backend.vehicle.repository.VehicleRepository;
 import java.util.UUID;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -42,12 +40,6 @@ class VehicleActivityIntegrationTest extends AbstractIntegrationTest {
     @Autowired RefreshTokenRepository tokens;
     @Autowired EmailVerificationOtpRepository otps;
     @Autowired UserRepository users;
-
-    @BeforeEach @AfterEach
-    void clearDatabase() {
-        reminders.deleteAll(); expenses.deleteAll(); maintenance.deleteAll(); fuel.deleteAll();
-        vehicles.deleteAll(); tokens.deleteAll(); otps.deleteAll(); users.deleteAll();
-    }
 
     @Test
     void emptyOwnedVehicleReturnsEmptyActivity() throws Exception {

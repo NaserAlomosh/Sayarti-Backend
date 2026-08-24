@@ -15,7 +15,6 @@ import com.sayarti.backend.security.oauth.GoogleIdentity;
 import com.sayarti.backend.security.oauth.GoogleTokenVerifier;
 import com.sayarti.backend.user.entity.User;
 import com.sayarti.backend.user.repository.UserRepository;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -52,12 +51,6 @@ class AuthenticationIntegrationTest extends AbstractIntegrationTest {
 
     @MockitoBean
     GoogleTokenVerifier googleTokens;
-
-    @BeforeEach
-    void clear() {
-        tokens.deleteAll();
-        users.deleteAll();
-    }
 
     private JsonNode register(String email) throws Exception {
         return body(mvc.perform(post("/api/v1/auth/register")

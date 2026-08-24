@@ -15,7 +15,6 @@ import com.sayarti.backend.auth.repository.RefreshTokenRepository;
 import com.sayarti.backend.security.oauth.GoogleIdentity;
 import com.sayarti.backend.security.oauth.GoogleTokenVerifier;
 import com.sayarti.backend.user.repository.UserRepository;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -32,8 +31,6 @@ class CountryCurrencyIntegrationTest extends AbstractIntegrationTest {
     @Autowired UserRepository users;
     @Autowired RefreshTokenRepository tokens;
     @MockitoBean GoogleTokenVerifier googleTokens;
-
-    @BeforeEach void clearUsers() { tokens.deleteAll(); users.deleteAll(); }
 
     @Test void referenceDataIsPublicOrderedAndMapped() throws Exception {
         mvc.perform(get("/api/v1/reference/countries")).andExpect(status().isOk())
