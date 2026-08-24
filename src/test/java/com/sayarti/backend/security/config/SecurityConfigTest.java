@@ -1,13 +1,17 @@
 package com.sayarti.backend.security.config;
 
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.sayarti.backend.common.exception.ErrorCode;
+import com.sayarti.backend.i18n.MessageLocalizer;
 import com.sayarti.backend.security.filter.JwtAuthenticationFilter;
 import com.sayarti.backend.security.jwt.JwtService;
 import com.sayarti.backend.user.repository.UserRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -38,6 +42,15 @@ class SecurityConfigTest {
 
     @MockitoBean
     private UserRepository userRepository;
+
+    @MockitoBean
+    private MessageLocalizer messageLocalizer;
+
+    @BeforeEach
+    void setUpLocalization() {
+        when(messageLocalizer.error(ErrorCode.UNAUTHORIZED, "Authentication is required"))
+                .thenReturn("Authentication is required");
+    }
 
     @Test
     void protectsNonPublicRoutesWithStandardError() throws Exception {
