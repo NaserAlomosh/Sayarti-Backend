@@ -827,8 +827,8 @@ soft-delete, ordering, and multi-currency behavior.
 - [x] Create Notification Service
 - [x] Send Notification To Device
 - [x] Send Notification To User Devices
-- [ ] License Expiration Notification
-- [ ] Insurance Expiration Notification
+- [x] License Expiration Notification
+- [x] Insurance Expiration Notification
 - [x] Maintenance Notification
 - [x] Mileage Reminder Notification
 - [x] Custom Reminder Notification
@@ -838,12 +838,13 @@ account configuration creates the Firebase Admin components, the provider-neutra
 service sends to one device or fans out to all registered devices for a user, permanently invalid
 tokens are removed, and an unavailable-provider fallback fails safely when Firebase is not
 configured. Provider tests verify Firebase message construction without making network calls.
-The reminder scheduler uses this service for date-based custom reminders and mileage-based
-maintenance reminders, with tests covering successful, partial, failed, retried, and duplicate-
-prevented delivery. License- and insurance-expiration notifications remain incomplete because
-there is no category-specific processing or test coverage establishing their required behavior.
-Real Firebase project/device delivery also remains an external verification item documented in
-`SECRETS_SETUP.md`; the completed backend delivery paths do not claim that verification.
+The reminder scheduler uses this service for date-based custom, license-expiration, and
+insurance-expiration reminders and mileage-based maintenance reminders. Automated tests cover
+category-specific expiration processing and localized notification content, along with successful,
+partial, failed, retried, and duplicate-prevented delivery. These backend notification paths are
+implemented and locally verified by `./mvnw clean verify`. Real Firebase delivery to a physical
+Android or iOS device remains an external verification item documented in `SECRETS_SETUP.md`;
+the completed backend implementation and automated verification do not claim real-device delivery.
 
 ---
 
@@ -1262,7 +1263,7 @@ before its own checklist items are marked complete.
 - [x] Expenses
 - [x] Reminders
 - [x] Device Management
-- [ ] Firebase Push Notifications
+- [x] Firebase Push Notifications
 - [x] Reminder Scheduler
 - [x] Database Indexes
 - [x] Statistics
