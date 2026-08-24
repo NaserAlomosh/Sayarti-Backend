@@ -21,12 +21,15 @@ import com.sayarti.backend.statistics.dto.FuelStatisticsResponse;
 import com.sayarti.backend.statistics.dto.GeneralStatisticsResponse;
 import com.sayarti.backend.statistics.dto.MaintenanceCategoryStatisticsResponse;
 import com.sayarti.backend.statistics.dto.MaintenanceStatisticsResponse;
+import com.sayarti.backend.statistics.dto.TrueVehicleCostResponse;
 import com.sayarti.backend.vehicle.entity.Vehicle;
 import com.sayarti.backend.vehicle.repository.VehicleRepository;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.YearMonth;
 import java.time.ZoneOffset;
+import java.time.temporal.ChronoUnit;
+import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
@@ -147,6 +150,59 @@ public class StatisticsService {
                 totals(records, Expense::getCurrencyCode, Expense::getAmount),
                 averages(records, Expense::getCurrencyCode, Expense::getAmount), categories,
                 latest == null ? null : latest.getExpenseDate());
+    }
+
+    @Transactional(readOnly = true)
+    public TrueVehicleCostResponse totalCost(AuthenticatedUser user, UUID vehicleId) {
+        Vehicle vehicle = vehicles.findByIdAndUserIdAndDeletedAtIsNull(vehicleId, user.id())
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        ErrorCode.VEHICLE_NOT_FOUND, "Vehicle not found"));
+        var fuel = fuelRecords.findAllByVehicleIdAndDeletedAtIsNull(vehicleId);
+        var maintenance = maintenanceRecords.findAllByVehicleIdAndDeletedAtIsNull(vehicleId);
+        var expense = expenses.findAllByVehicleIdAndDeletedAtIsNull(vehicleId);
+        var fuelResult = FuelCalculator.calculate(fuel, YearMonth.now(ZoneOffset.UTC));
+
+        List<CurrencyTotalResponse> fuelTotals = fuelResult.costs().stream()
+                .map(cost -> new CurrencyTotalResponse(cost.currencyCode(), cost.totalCost()))
+                .toList();
+        List<CurrencyTotalResponse> maintenanceTotals = totals(maintenance,
+                MaintenanceRecord::getCurrencyCode, MaintenanceRecord::getCost);
+        List<CurrencyTotalResponse> expenseTotals = totals(expense, Expense::getCurrencyCode,
+                Expense::getAmount);
+        Map<String, BigDecimal> combined = new TreeMap<>();
+        List.of(fuelTotals, maintenanceTotals, expenseTotals).forEach(domain -> domain.forEach(
+                total -> combined.merge(total.currencyCode(), total.amount(), BigDecimal::add)));
+        List<CurrencyTotalResponse> vehicleTotals = combined.entrySet().stream()
+                .map(entry -> new CurrencyTotalResponse(entry.getKey(),
+                        entry.getValue().setScale(FuelCalculator.CALCULATION_SCALE,
+                                RoundingMode.HALF_UP)))
+                .toList();
+
+        var dates = java.util.stream.Stream.concat(
+                fuel.stream().map(record -> record.getFilledAt()),
+                java.util.stream.Stream.concat(
+                        maintenance.stream().map(record -> record.getServiceDate()),
+                        expense.stream().map(record -> record.getExpenseDate())))
+                .toList();
+        long monthCount = dates.isEmpty() ? 0 : ChronoUnit.MONTHS.between(
+                YearMonth.from(dates.stream().min(Comparator.naturalOrder()).orElseThrow()
+                        .atZone(ZoneOffset.UTC)),
+                YearMonth.from(dates.stream().max(Comparator.naturalOrder()).orElseThrow()
+                        .atZone(ZoneOffset.UTC))) + 1;
+        List<CurrencyAverageResponse> monthly = monthCount == 0 ? List.of()
+                : combined.entrySet().stream().map(entry -> new CurrencyAverageResponse(
+                        entry.getKey(), entry.getValue().divide(BigDecimal.valueOf(monthCount),
+                                FuelCalculator.CALCULATION_SCALE, RoundingMode.HALF_UP))).toList();
+        List<CurrencyRateResponse> rates = combined.entrySet().stream()
+                .map(entry -> new CurrencyRateResponse(entry.getKey(),
+                        fuelResult.totalDistance().signum() > 0
+                                ? entry.getValue().divide(fuelResult.totalDistance(),
+                                        FuelCalculator.CALCULATION_SCALE, RoundingMode.HALF_UP)
+                                : null))
+                .toList();
+
+        return new TrueVehicleCostResponse(vehicleId, vehicle.getCurrentMileage(), fuelTotals,
+                maintenanceTotals, expenseTotals, vehicleTotals, monthly, rates);
     }
 
     private List<CurrencyAverageResponse> averages(List<MaintenanceRecord> records) {
