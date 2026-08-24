@@ -21,10 +21,12 @@ public record UpdateUserRequest(
         String firstName,
         @Size(max = 100)
         @Pattern(regexp = ".*\\S.*", message = "must not be blank")
-        String lastName) {
+        String lastName,
+        @Pattern(regexp = "en|ar", message = "must be one of: en, ar")
+        String preferredLanguage) {
 
     @AssertTrue(message = "at least one editable field must be provided")
     public boolean isAnyFieldProvided() {
-        return firstName != null || lastName != null;
+        return firstName != null || lastName != null || preferredLanguage != null;
     }
 }

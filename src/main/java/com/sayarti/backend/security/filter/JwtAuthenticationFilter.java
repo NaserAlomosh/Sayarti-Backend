@@ -23,11 +23,22 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtService jwtService;
     private final UserRepository users;
     private final ObjectMapper mapper;
+    private final com.sayarti.backend.i18n.MessageLocalizer localizer;
+    @org.springframework.beans.factory.annotation.Autowired
     public JwtAuthenticationFilter(
-            JwtService jwtService, UserRepository users, ObjectMapper mapper) {
+            JwtService jwtService, UserRepository users, ObjectMapper mapper,
+            com.sayarti.backend.i18n.MessageLocalizer localizer) {
         this.jwtService = jwtService;
         this.users = users;
         this.mapper = mapper;
+        this.localizer = localizer;
+    }
+    public JwtAuthenticationFilter(JwtService jwtService, UserRepository users, ObjectMapper mapper) {
+        this(jwtService, users, mapper, defaultLocalizer());
+    }
+    private static com.sayarti.backend.i18n.MessageLocalizer defaultLocalizer() {
+        var source = new org.springframework.context.support.ResourceBundleMessageSource(); source.setBasename("messages");
+        return new com.sayarti.backend.i18n.MessageLocalizer(source);
     }
 
     @Override
@@ -56,6 +67,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         SecurityContextHolder.clearContext();
         res.setStatus(401);
         res.setContentType(MediaType.APPLICATION_JSON_VALUE);
-        mapper.writeValue(res.getOutputStream(), ErrorResponse.of(code.name(), message));
+        mapper.writeValue(res.getOutputStream(), ErrorResponse.of(code.name(), localizer.error(code, message)));
     }
 }

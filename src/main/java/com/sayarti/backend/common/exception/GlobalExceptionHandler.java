@@ -22,13 +22,27 @@ import org.springframework.web.servlet.resource.NoResourceFoundException;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+    private final com.sayarti.backend.i18n.MessageLocalizer localizer;
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public GlobalExceptionHandler(com.sayarti.backend.i18n.MessageLocalizer localizer) {
+        this.localizer = localizer;
+    }
+
+    public GlobalExceptionHandler() {
+        org.springframework.context.support.ResourceBundleMessageSource source =
+                new org.springframework.context.support.ResourceBundleMessageSource();
+        source.setBasename("messages");
+        source.setDefaultEncoding("UTF-8");
+        this.localizer = new com.sayarti.backend.i18n.MessageLocalizer(source);
+    }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     ResponseEntity<ErrorResponse> handleMethodArgumentNotValid(
             MethodArgumentNotValidException exception) {
         Map<String, String> details = new LinkedHashMap<>();
         for (FieldError error : exception.getBindingResult().getFieldErrors()) {
-            details.putIfAbsent(error.getField(), error.getDefaultMessage());
+            details.putIfAbsent(error.getField(), localizeValidation(error.getDefaultMessage()));
         }
         return response(HttpStatus.BAD_REQUEST, ErrorCode.VALIDATION_ERROR,
                 "Request validation failed", details);
@@ -39,7 +53,7 @@ public class GlobalExceptionHandler {
             ConstraintViolationException exception) {
         Map<String, String> details = new LinkedHashMap<>();
         exception.getConstraintViolations().forEach(violation
-                -> details.put(violation.getPropertyPath().toString(), violation.getMessage()));
+                -> details.put(violation.getPropertyPath().toString(), localizeValidation(violation.getMessage())));
         return response(HttpStatus.BAD_REQUEST, ErrorCode.VALIDATION_ERROR,
                 "Request validation failed", details);
     }
@@ -61,7 +75,8 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ApiException.class)
     ResponseEntity<ErrorResponse> handleApiException(ApiException exception) {
         return response(
-                exception.getStatus(), exception.getErrorCode(), exception.getMessage(), null);
+                exception.getStatus(), exception.getErrorCode(),
+                localizer.error(exception.getErrorCode(), exception.getMessage()), null);
     }
 
     @ExceptionHandler(AuthenticationException.class)
@@ -97,6 +112,17 @@ public class GlobalExceptionHandler {
 
     private ResponseEntity<ErrorResponse> response(
             HttpStatus status, ErrorCode code, String message, Map<String, String> details) {
-        return ResponseEntity.status(status).body(ErrorResponse.of(code.name(), message, details));
+        return ResponseEntity.status(status).body(ErrorResponse.of(code.name(), localizer.error(code, message), details));
+    }
+
+    private String localizeValidation(String message) {
+        if (message == null) return null;
+        String key = switch (message) {
+            case "must not be blank" -> "validation.not.blank";
+            case "at least one editable field must be provided" -> "validation.editable.required";
+            case "must contain upper-case, lower-case, and numeric characters" -> "validation.password.complexity";
+            default -> null;
+        };
+        return key == null ? message : localizer.text(key, message);
     }
 }
