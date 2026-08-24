@@ -51,6 +51,7 @@ The Java 17 Maven/Spring Boot foundation currently includes:
 - General vehicle statistics with vehicle ownership enforcement.
 - Fuel statistics with vehicle ownership enforcement.
 - Maintenance statistics with vehicle ownership enforcement.
+- True Vehicle Cost statistics with vehicle ownership enforcement.
 - Microsoft SQL Server persistence.
 - Flyway schema migrations.
 - Hibernate schema validation.
@@ -67,7 +68,7 @@ Local verification has completed successfully with:
 ./mvnw clean verify
 
 BUILD SUCCESS
-Tests run: 129
+Tests run: 133
 Failures: 0
 Errors: 0
 Skipped: 0
@@ -89,9 +90,9 @@ Country/Currency Foundation, Vehicle Management, Vehicle-specific ownership prot
 Fuel Tracking CRUD with ownership protection, Maintenance CRUD with ownership protection,
 Expense CRUD with ownership protection, Reminder CRUD and completion with ownership
 protection, Device Management, General Vehicle Statistics with ownership protection, Fuel
-Statistics with ownership protection, and Maintenance Statistics with ownership protection are
-implemented and locally verified. Fuel Calculations, Expense Statistics, True Vehicle Cost,
-Dashboard, and Energy Tracking are not implemented yet.
+Statistics with ownership protection, Maintenance Statistics with ownership protection, and True
+Vehicle Cost with ownership protection are implemented and locally verified. Fuel Calculations,
+Expense Statistics, Dashboard, and Energy Tracking are not implemented yet.
 
 LOCAL email verification is implemented and locally verified. The provider-neutral SMTP
 adapter is implemented and automated-test covered. Real SMTP delivery remains
@@ -835,10 +836,10 @@ empty currency and category arrays, and `null` latest date and mileage.
 
 # 31. True Vehicle Cost
 
-- [ ] Calculate Total Vehicle Cost
-- [ ] Calculate Average Monthly Cost
-- [ ] Calculate Cost Per Kilometer
-- [ ] Create Total Cost Endpoint
+- [x] Calculate Total Vehicle Cost
+- [x] Calculate Average Monthly Cost
+- [x] Calculate Cost Per Kilometer
+- [x] Create Total Cost Endpoint
 
 ---
 
@@ -1026,7 +1027,7 @@ api.version=1.44
 - [x] Fuel Statistics
 - [x] Maintenance Statistics
 - [ ] Expense Statistics
-- [ ] True Vehicle Cost
+- [x] True Vehicle Cost
 
 ## Security Tests
 
@@ -1053,7 +1054,7 @@ Current verified baseline:
 
 ```text
 BUILD SUCCESS
-Tests run: 129
+Tests run: 133
 Failures: 0
 Errors: 0
 Skipped: 0
@@ -1111,7 +1112,7 @@ before its own checklist items are marked complete.
 - [ ] Reminder Scheduler
 - [x] Statistics
 - [x] Fuel Statistics
-- [ ] True Vehicle Cost
+- [x] True Vehicle Cost
 - [ ] Dashboard
 - [ ] Recent Activity
 - [x] Swagger
