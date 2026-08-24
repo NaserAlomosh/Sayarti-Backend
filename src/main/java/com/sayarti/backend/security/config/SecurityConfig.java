@@ -1,9 +1,11 @@
 package com.sayarti.backend.security.config;
 
+import com.sayarti.backend.logging.HttpRequestLoggingFilter;
 import com.sayarti.backend.security.filter.JwtAuthenticationFilter;
 import java.util.Arrays;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -21,10 +23,16 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 @Configuration
 public class SecurityConfig {
     @Bean
+    HttpRequestLoggingFilter requestLoggingFilter() {
+        return new HttpRequestLoggingFilter();
+    }
+
+    @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http,
             RestAuthenticationEntryPoint authenticationEntryPoint,
             RestAccessDeniedHandler accessDeniedHandler,
-            JwtAuthenticationFilter jwtAuthenticationFilter) throws Exception {
+            JwtAuthenticationFilter jwtAuthenticationFilter,
+            HttpRequestLoggingFilter requestLoggingFilter) throws Exception {
         return http.csrf(csrf -> csrf.disable())
                 .cors(Customizer.withDefaults())
                 .sessionManagement(
@@ -49,7 +57,17 @@ public class SecurityConfig {
                                 .authenticated())
                 .addFilterBefore(
                         jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(requestLoggingFilter, JwtAuthenticationFilter.class)
                 .build();
+    }
+
+    @Bean
+    FilterRegistrationBean<HttpRequestLoggingFilter> requestLoggingFilterRegistration(
+            HttpRequestLoggingFilter filter) {
+        FilterRegistrationBean<HttpRequestLoggingFilter> registration =
+                new FilterRegistrationBean<>(filter);
+        registration.setEnabled(false);
+        return registration;
     }
 
     @Bean
