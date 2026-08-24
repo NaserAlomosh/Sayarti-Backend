@@ -10,6 +10,7 @@ import com.sayarti.backend.vehicle.entity.Vehicle;
 import com.sayarti.backend.vehicle.repository.VehicleRepository;
 import java.time.Clock;
 import java.time.Instant;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,19 +30,31 @@ public class ReminderNotificationProcessor {
     private final VehicleRepository vehicles;
     private final NotificationService notifications;
     private final Clock clock;
+    private final com.sayarti.backend.user.repository.UserRepository users;
+    private final com.sayarti.backend.i18n.MessageLocalizer localizer;
 
     @Autowired
     public ReminderNotificationProcessor(ReminderRepository reminders, VehicleRepository vehicles,
-            NotificationService notifications) {
-        this(reminders, vehicles, notifications, Clock.systemUTC());
+            NotificationService notifications, com.sayarti.backend.user.repository.UserRepository users,
+            com.sayarti.backend.i18n.MessageLocalizer localizer) {
+        this(reminders, vehicles, notifications, Clock.systemUTC(), users, localizer);
     }
 
     ReminderNotificationProcessor(ReminderRepository reminders, VehicleRepository vehicles,
             NotificationService notifications, Clock clock) {
+        this(reminders, vehicles, notifications, clock, null, null);
+    }
+
+    private ReminderNotificationProcessor(ReminderRepository reminders, VehicleRepository vehicles,
+            NotificationService notifications, Clock clock,
+            com.sayarti.backend.user.repository.UserRepository users,
+            com.sayarti.backend.i18n.MessageLocalizer localizer) {
         this.reminders = reminders;
         this.vehicles = vehicles;
         this.notifications = notifications;
         this.clock = clock;
+        this.users = users;
+        this.localizer = localizer;
     }
 
     @Transactional
@@ -57,8 +70,10 @@ public class ReminderNotificationProcessor {
             return false;
         }
 
+        Locale locale = users == null ? Locale.ENGLISH : users.findById(vehicle.getUserId())
+                .map(u -> Locale.forLanguageTag(u.getPreferredLanguage())).orElse(Locale.ENGLISH);
         NotificationCommand command = new NotificationCommand(reminder.getTitle(),
-                notificationBody(reminder, vehicle), Map.of(
+                notificationBody(reminder, vehicle, locale), Map.of(
                         "type", "REMINDER",
                         "reminderId", reminder.getId().toString(),
                         "vehicleId", vehicle.getId().toString()));
@@ -78,12 +93,19 @@ public class ReminderNotificationProcessor {
                 && vehicle.getCurrentMileage() >= reminder.getTargetMileage();
     }
 
-    private String notificationBody(Reminder reminder, Vehicle vehicle) {
+    private String notificationBody(Reminder reminder, Vehicle vehicle, Locale locale) {
         if (reminder.getDescription() != null && !reminder.getDescription().isBlank()) {
             return reminder.getDescription();
         }
+        if (localizer == null) {
+            return reminder.getTriggerType() == ReminderTriggerType.MILEAGE
+                    ? "Vehicle mileage has reached " + reminder.getTargetMileage() + " km."
+                    : "This vehicle reminder is now due.";
+        }
         return reminder.getTriggerType() == ReminderTriggerType.MILEAGE
-                ? "Vehicle mileage has reached " + reminder.getTargetMileage() + " km."
-                : "This vehicle reminder is now due.";
+                ? localizer.text("notification.reminder.mileage",
+                        "Vehicle mileage has reached {0} km.", locale,
+                        reminder.getTargetMileage())
+                : localizer.text("notification.reminder.due", "This vehicle reminder is now due.", locale);
     }
 }

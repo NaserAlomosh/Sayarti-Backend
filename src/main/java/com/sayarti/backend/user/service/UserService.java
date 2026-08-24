@@ -38,6 +38,7 @@ public class UserService {
     public UserResponse update(AuthenticatedUser principal, UpdateUserRequest request) {
         User user = activeUser(principal);
         user.updateProfile(request.firstName(), request.lastName());
+        user.changePreferredLanguage(request.preferredLanguage());
         return UserResponse.from(user);
     }
 

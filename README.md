@@ -1157,7 +1157,36 @@ Future DB-backed feature tests must continue using the shared SQL Server Testcon
 
 ---
 
-# 42. Final Build Verification
+# 42. Backend Localization / Internationalization (i18n)
+
+- [ ] **English and Arabic Backend Localization**
+
+The V1 localization implementation supports English (`en`) and Arabic (`ar`) through the
+standard `Accept-Language` request header. English is the default for a missing or unsupported
+language; supported regional variants such as `ar-JO`, `ar-SA`, `en-US`, and `en-GB` resolve to
+their base language. API success and error messages, Bean Validation messages, LOCAL verification
+emails, and generated reminder-notification bodies use centralized UTF-8 Spring `MessageSource`
+bundles rather than duplicated bilingual strings.
+
+Country and currency list responses include a locale-selected `name` while retaining the existing
+English and Arabic fields for backward compatibility. ISO country and currency codes and existing
+country-to-currency mappings remain unchanged. Country `flag` values are derived deterministically
+from ISO alpha-2 codes and are not stored in SQL Server or loaded from an external service.
+
+Scheduled reminder localization uses the authenticated user's constrained `preferredLanguage`
+(`en` or `ar`), persisted with an English default so background processing is deterministic.
+Synchronous verification emails use the triggering request locale; English is the safe fallback.
+User-authored reminder titles and descriptions are deliberately not translated. Raw error codes,
+enum values, identifiers, API paths, and request/response field names are also intentionally stable
+machine-readable values and are never translated.
+
+OpenAPI documents the global `Accept-Language` behavior without changing bearer authentication.
+This milestone remains unchecked until the complete `./mvnw clean verify` flow finishes with
+`BUILD SUCCESS` and the verified test count below is updated.
+
+---
+
+# 43. Final Build Verification
 
 - [x] Current Maven Build Passes
 - [x] Current Automated Tests Pass
@@ -1208,6 +1237,7 @@ before its own checklist items are marked complete.
 - [x] Fuel Statistics
 - [x] True Vehicle Cost
 - [x] Dashboard
+- [ ] Localization / Internationalization
 - [x] Recent Activity
 - [x] Swagger
 - [ ] Full V1 Testing

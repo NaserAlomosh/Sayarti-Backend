@@ -14,14 +14,23 @@ import org.springframework.stereotype.Service;
 @Service
 public class SmtpEmailService implements EmailService {
     private static final Logger log = LoggerFactory.getLogger(SmtpEmailService.class);
-    private static final String SUBJECT = "Verify your Sayarti email address";
-
     private final JavaMailSender mailSender;
     private final SmtpMailProperties properties;
+    private final com.sayarti.backend.i18n.MessageLocalizer localizer;
 
-    public SmtpEmailService(JavaMailSender mailSender, SmtpMailProperties properties) {
+    @org.springframework.beans.factory.annotation.Autowired
+    public SmtpEmailService(JavaMailSender mailSender, SmtpMailProperties properties,
+            com.sayarti.backend.i18n.MessageLocalizer localizer) {
         this.mailSender = mailSender;
         this.properties = properties;
+        this.localizer = localizer;
+    }
+    public SmtpEmailService(JavaMailSender mailSender, SmtpMailProperties properties) {
+        this(mailSender, properties, defaultLocalizer());
+    }
+    private static com.sayarti.backend.i18n.MessageLocalizer defaultLocalizer() {
+        var source = new org.springframework.context.support.ResourceBundleMessageSource(); source.setBasename("messages");
+        return new com.sayarti.backend.i18n.MessageLocalizer(source);
     }
 
     @Override
@@ -31,7 +40,7 @@ public class SmtpEmailService implements EmailService {
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
             helper.setFrom(properties.from());
             helper.setTo(recipient);
-            helper.setSubject(SUBJECT);
+            helper.setSubject(localizer.text("email.verification.subject", "Verify your Sayarti email address"));
             helper.setText(plainText(otp, expirationSeconds), html(otp, expirationSeconds));
             mailSender.send(message);
         } catch (MailException | MessagingException exception) {
@@ -42,25 +51,26 @@ public class SmtpEmailService implements EmailService {
     }
 
     private String plainText(String otp, long expirationSeconds) {
-        return "Sayarti email verification\n\nYour verification code is " + otp
-                + ". It expires in " + duration(expirationSeconds) + ".\n\n"
-                + "If you did not request this code, please ignore this email.";
+        return localizer.text("email.verification.heading", "Sayarti email verification") + "\n\n"
+                + localizer.text("email.verification.code", "Your verification code is:") + " " + otp + "\n"
+                + localizer.text("email.verification.expires", "This code expires in {0}.", duration(expirationSeconds)) + "\n\n"
+                + localizer.text("email.verification.ignore", "If you did not request this code, please ignore this email.");
     }
 
     private String html(String otp, long expirationSeconds) {
-        return "<html><body><h1>Sayarti email verification</h1>"
-                + "<p>Your verification code is:</p><p><strong style=\"font-size:24px\">"
-                + otp + "</strong></p><p>This code expires in " + duration(expirationSeconds)
-                + ".</p><p>If you did not request this code, please ignore this email.</p>"
+        return "<html><body><h1>" + localizer.text("email.verification.heading", "Sayarti email verification") + "</h1>"
+                + "<p>" + localizer.text("email.verification.code", "Your verification code is:") + "</p><p><strong style=\"font-size:24px\">"
+                + otp + "</strong></p><p>" + localizer.text("email.verification.expires", "This code expires in {0}.", duration(expirationSeconds))
+                + "</p><p>" + localizer.text("email.verification.ignore", "If you did not request this code, please ignore this email.") + "</p>"
                 + "</body></html>";
     }
 
     private String duration(long expirationSeconds) {
         if (expirationSeconds % 60 == 0) {
             long minutes = expirationSeconds / 60;
-            return minutes + (minutes == 1 ? " minute" : " minutes");
+            return localizer.text("time.minute", minutes + (minutes == 1 ? " minute" : " minutes"), minutes);
         }
-        return expirationSeconds + (expirationSeconds == 1 ? " second" : " seconds");
+        return localizer.text("time.second", expirationSeconds + (expirationSeconds == 1 ? " second" : " seconds"), expirationSeconds);
     }
 
     private String recipientDomain(String recipient) {

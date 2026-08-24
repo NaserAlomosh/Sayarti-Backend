@@ -37,6 +37,8 @@ public class User extends BaseAuditableEntity {
     private String countryCode;
     @Column(name = "default_currency_code", length = 3)
     private String defaultCurrencyCode;
+    @Column(name = "preferred_language", nullable = false, length = 2)
+    private String preferredLanguage = "en";
     @Column(name = "deleted_at")
     private Instant deletedAt;
 
@@ -107,6 +109,7 @@ public class User extends BaseAuditableEntity {
     public boolean isEmailVerified() { return emailVerified; }
     public String getCountryCode() { return countryCode; }
     public String getDefaultCurrencyCode() { return defaultCurrencyCode; }
+    public String getPreferredLanguage() { return preferredLanguage == null ? "en" : preferredLanguage; }
     public boolean isCountrySetupComplete() {
         return countryCode != null && defaultCurrencyCode != null;
     }
@@ -131,6 +134,10 @@ public class User extends BaseAuditableEntity {
         if (lastName != null) {
             this.lastName = lastName.trim();
         }
+    }
+
+    public void changePreferredLanguage(String language) {
+        if (language != null) this.preferredLanguage = language.toLowerCase(java.util.Locale.ROOT);
     }
 
     public void delete() {

@@ -13,6 +13,7 @@ public record UserResponse(
         String authProvider,
         String countryCode,
         String defaultCurrencyCode,
+        String preferredLanguage,
         Instant createdAt,
         Instant updatedAt) {
     public static UserResponse from(User user) {
@@ -25,6 +26,7 @@ public record UserResponse(
                 user.getAuthProvider().name(),
                 user.getCountryCode(),
                 user.getDefaultCurrencyCode(),
+                user.getPreferredLanguage(),
                 user.getCreatedAt(),
                 user.getUpdatedAt());
     }

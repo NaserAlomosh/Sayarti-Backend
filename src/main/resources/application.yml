@@ -3,6 +3,10 @@ spring:
     import: optional:file:.env[.properties]
   application:
     name: sayarti-backend
+  messages:
+    basename: messages
+    encoding: UTF-8
+    fallback-to-system-locale: false
   profiles:
     default: dev
   datasource:

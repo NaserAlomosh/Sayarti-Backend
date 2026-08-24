@@ -57,6 +57,7 @@ public class AuthService {
         Country country = referenceData.requireCountry(r.countryCode());
         User user = new User(r.firstName().trim(), r.lastName().trim(), email,
                 encoder.encode(r.password()), country.getCode(), country.getDefaultCurrencyCode());
+        user.changePreferredLanguage(requestLanguage());
         try {
             users.saveAndFlush(user);
         } catch (DataIntegrityViolationException e) {
@@ -119,6 +120,7 @@ public class AuthService {
         }
         User user = User.google(
                 name(identity.givenName()), name(identity.familyName()), email, identity.subject());
+        user.changePreferredLanguage(requestLanguage());
         try {
             users.saveAndFlush(user);
         } catch (DataIntegrityViolationException exception) {
@@ -130,6 +132,11 @@ public class AuthService {
     public AuthResponse refresh(RefreshRequest r) {
         var rotation = refreshTokens.rotate(r.refreshToken());
         return response(rotation.user(), rotation.refreshToken());
+    }
+
+    private String requestLanguage() {
+        return "ar".equals(org.springframework.context.i18n.LocaleContextHolder.getLocale().getLanguage())
+                ? "ar" : "en";
     }
     @Transactional
     public void logout(RefreshRequest r) {
