@@ -32,7 +32,9 @@ class JpaAuditingIntegrationTest extends AbstractIntegrationTest {
         assertThat(user.getCreatedAt()).isNull();
         assertThat(user.getUpdatedAt()).isNull();
 
-        userRepository.saveAndFlush(user);
+        // The entities use application-assigned UUIDs, so Spring Data saves new instances via
+        // EntityManager.merge(). Auditing is applied to the managed instance returned by save.
+        user = userRepository.saveAndFlush(user);
         var createdAt = user.getCreatedAt();
         var firstUpdatedAt = user.getUpdatedAt();
 
