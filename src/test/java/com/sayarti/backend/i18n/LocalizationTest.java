@@ -3,15 +3,22 @@ package com.sayarti.backend.i18n;
 import static org.assertj.core.api.Assertions.assertThat;
 import com.sayarti.backend.common.exception.ErrorCode;
 import java.util.Locale;
+import java.util.UUID;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.context.support.ResourceBundleMessageSource;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 class LocalizationTest {
     private final MessageLocalizer localizer = localizer();
 
-    @AfterEach void reset() { LocaleContextHolder.resetLocaleContext(); }
+    @AfterEach void reset() {
+        LocaleContextHolder.resetLocaleContext();
+        SecurityContextHolder.clearContext();
+    }
 
     @Test void resolvesEnglishArabicRegionalAndUnsupportedLocales() {
         assertMessage(null, "Vehicle not found");
@@ -28,6 +35,31 @@ class LocalizationTest {
         assertThat(ErrorCode.VEHICLE_NOT_FOUND.name()).isEqualTo("VEHICLE_NOT_FOUND");
         assertThat(localizer.error(ErrorCode.VEHICLE_NOT_FOUND, "Vehicle not found"))
                 .isEqualTo("المركبة غير موجودة");
+    }
+
+    @Test void requestLanguageUsesHeaderThenUserPreferenceThenEnglish() {
+        SayartiLocaleResolver resolver = new SayartiLocaleResolver();
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        assertThat(resolver.resolveLocale(request)).isEqualTo(Locale.ENGLISH);
+
+        var user = new com.sayarti.backend.security.jwt.AuthenticatedUser(
+                UUID.randomUUID(), "user@example.com", "ar");
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(user, null));
+        assertThat(resolver.resolveLocale(request)).isEqualTo(LocalizationConfig.ARABIC);
+
+        request.addHeader("Accept-Language", "en-US");
+        assertThat(resolver.resolveLocale(request)).isEqualTo(Locale.ENGLISH);
+    }
+
+    @Test void unsupportedAndMalformedHeadersFallBackToEnglish() {
+        SayartiLocaleResolver resolver = new SayartiLocaleResolver();
+        MockHttpServletRequest unsupported = new MockHttpServletRequest();
+        unsupported.addHeader("Accept-Language", "fr-FR");
+        assertThat(resolver.resolveLocale(unsupported)).isEqualTo(Locale.ENGLISH);
+        MockHttpServletRequest malformed = new MockHttpServletRequest();
+        malformed.addHeader("Accept-Language", "not a valid language header (");
+        assertThat(resolver.resolveLocale(malformed)).isEqualTo(Locale.ENGLISH);
     }
 
     private void assertMessage(Locale locale, String expected) {

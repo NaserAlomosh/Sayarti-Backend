@@ -35,6 +35,7 @@ public class RestAuthenticationEntryPoint implements AuthenticationEntryPoint {
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         objectMapper.writeValue(response.getOutputStream(),
-                ErrorResponse.of(ErrorCode.UNAUTHORIZED.name(), localizer.error(ErrorCode.UNAUTHORIZED, "Authentication is required")));
+                ErrorResponse.of(ErrorCode.UNAUTHORIZED.name(), localizer.error(ErrorCode.UNAUTHORIZED,
+                        "Authentication is required", com.sayarti.backend.i18n.SayartiLocaleResolver.resolveHeader(request))));
     }
 }

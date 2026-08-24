@@ -38,10 +38,30 @@ class CountryCurrencyIntegrationTest extends AbstractIntegrationTest {
     @Test void referenceDataIsPublicOrderedAndMapped() throws Exception {
         mvc.perform(get("/api/v1/reference/countries")).andExpect(status().isOk())
                 .andExpect(jsonPath("$.data[0].code").value("AE"))
+                .andExpect(jsonPath("$.data[?(@.code == 'JO')].name").value("Jordan"))
+                .andExpect(jsonPath("$.data[?(@.code == 'JO')].flag").value("🇯🇴"))
+                .andExpect(jsonPath("$.data[?(@.code == 'JO')].currencyCode").value("JOD"))
                 .andExpect(jsonPath("$.data[?(@.code == 'JO')].defaultCurrencyCode").value("JOD"))
                 .andExpect(jsonPath("$.data[?(@.code == 'AE')].defaultCurrencyCode").value("AED"));
         mvc.perform(get("/api/v1/reference/currencies")).andExpect(status().isOk())
+                .andExpect(jsonPath("$.data[0].code").value("AED"))
+                .andExpect(jsonPath("$.data[?(@.code == 'JOD')].name").value("Jordanian Dinar"))
+                .andExpect(jsonPath("$.data[?(@.code == 'JOD')].symbol").value("JD"))
                 .andExpect(jsonPath("$.data[?(@.code == 'USD')].decimalDigits").value(2));
+    }
+
+    @Test void referenceDisplayValuesAreArabicButIsoIdentifiersRemainStable() throws Exception {
+        mvc.perform(get("/api/v1/reference/countries").header("Accept-Language", "ar-JO"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data[?(@.code == 'JO')].code").value("JO"))
+                .andExpect(jsonPath("$.data[?(@.code == 'JO')].name").value("الأردن"))
+                .andExpect(jsonPath("$.data[?(@.code == 'JO')].flag").value("🇯🇴"))
+                .andExpect(jsonPath("$.data[?(@.code == 'JO')].currencyCode").value("JOD"));
+        mvc.perform(get("/api/v1/reference/currencies").header("Accept-Language", "ar"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data[?(@.code == 'JOD')].code").value("JOD"))
+                .andExpect(jsonPath("$.data[?(@.code == 'JOD')].name").value("الدينار الأردني"))
+                .andExpect(jsonPath("$.data[?(@.code == 'JOD')].symbol").value("د.أ"));
     }
 
     @Test void registrationAssignsCountryCurrencyAndRejectsUnsupportedCountry() throws Exception {
