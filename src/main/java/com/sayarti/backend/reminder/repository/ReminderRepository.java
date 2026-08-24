@@ -17,6 +17,8 @@ public interface ReminderRepository extends JpaRepository<Reminder, UUID> {
     List<Reminder> findAllByVehicleIdAndDeletedAtIsNull(UUID vehicleId);
     List<Reminder> findAllByVehicleIdAndCompletedFalseAndDeletedAtIsNullOrderByCreatedAtDescIdDesc(
             UUID vehicleId);
+    List<Reminder> findByVehicleIdAndCompletedTrueAndCompletedAtIsNotNullAndDeletedAtIsNullOrderByCompletedAtDescIdDesc(
+            UUID vehicleId, Pageable pageable);
 
     @Query("""
             select r.id from Reminder r, Vehicle v
