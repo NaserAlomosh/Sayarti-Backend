@@ -2,10 +2,14 @@ package com.sayarti.backend.reminder.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentCaptor.forClass;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.sayarti.backend.i18n.MessageLocalizer;
+import com.sayarti.backend.notification.NotificationCommand;
 import com.sayarti.backend.notification.NotificationDelivery;
 import com.sayarti.backend.notification.NotificationService;
 import com.sayarti.backend.notification.UserNotificationResult;
@@ -13,6 +17,8 @@ import com.sayarti.backend.reminder.entity.Reminder;
 import com.sayarti.backend.reminder.entity.ReminderCategory;
 import com.sayarti.backend.reminder.entity.ReminderTriggerType;
 import com.sayarti.backend.reminder.repository.ReminderRepository;
+import com.sayarti.backend.user.entity.User;
+import com.sayarti.backend.user.repository.UserRepository;
 import com.sayarti.backend.vehicle.entity.PowertrainType;
 import com.sayarti.backend.vehicle.entity.Vehicle;
 import com.sayarti.backend.vehicle.repository.VehicleRepository;
@@ -25,8 +31,10 @@ import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.support.ResourceBundleMessageSource;
 
 @ExtendWith(MockitoExtension.class)
 class ReminderNotificationProcessorTest {
@@ -34,6 +42,7 @@ class ReminderNotificationProcessorTest {
     @Mock ReminderRepository reminders;
     @Mock VehicleRepository vehicles;
     @Mock NotificationService notifications;
+    @Mock UserRepository users;
     ReminderNotificationProcessor processor;
     Vehicle vehicle;
 
@@ -47,6 +56,20 @@ class ReminderNotificationProcessorTest {
 
     @Test void dateReminderBecomesDue() {
         assertDelivered(date(NOW.minusSeconds(1)), sent());
+    }
+
+    @Test void dueLicenseExpirationDateReminderIsSelected() {
+        assertDelivered(expiration(ReminderCategory.LICENSE_EXPIRATION, NOW), sent());
+    }
+
+    @Test void dueInsuranceExpirationDateReminderIsSelected() {
+        assertDelivered(expiration(ReminderCategory.INSURANCE_EXPIRATION, NOW), sent());
+    }
+
+    @Test void futureLicenseAndInsuranceExpirationRemindersAreNotSelectedEarly() {
+        assertNotDue(expiration(ReminderCategory.LICENSE_EXPIRATION, NOW.plusSeconds(1)));
+        org.mockito.Mockito.clearInvocations(notifications);
+        assertNotDue(expiration(ReminderCategory.INSURANCE_EXPIRATION, NOW.plusSeconds(1)));
     }
 
     @Test void dateReminderNotYetDue() {
@@ -95,6 +118,8 @@ class ReminderNotificationProcessorTest {
                 NotificationDelivery.Status.FAILED));
         assertThat(processor.process(reminder.getId())).isFalse();
         assertThat(reminder.getNotificationDeliveredAt()).isNull();
+        assertThat(processor.process(reminder.getId())).isFalse();
+        verify(notifications, times(2)).sendToUser(any(), any());
     }
 
     @Test void successfulDeliveryPersistsState() {
@@ -108,6 +133,39 @@ class ReminderNotificationProcessorTest {
         assertDelivered(reminder, new UserNotificationResult(List.of(
                 new NotificationDelivery(UUID.randomUUID(), NotificationDelivery.Status.SENT),
                 new NotificationDelivery(UUID.randomUUID(), NotificationDelivery.Status.FAILED))));
+    }
+
+    @Test void licenseExpirationUsesEnglishLocalizationAndKeepsAuthoredTitle() {
+        assertLocalized(ReminderCategory.LICENSE_EXPIRATION, "en", "Renew my license",
+                "Your vehicle license expiration reminder is now due.");
+    }
+
+    @Test void insuranceExpirationUsesArabicPreferredLanguage() {
+        assertLocalized(ReminderCategory.INSURANCE_EXPIRATION, "ar", "تأميني",
+                "حان الآن موعد تذكير انتهاء تأمين مركبتك.");
+    }
+
+    private void assertLocalized(ReminderCategory category, String language, String title,
+            String expectedBody) {
+        ResourceBundleMessageSource source = new ResourceBundleMessageSource();
+        source.setBasename("messages");
+        source.setDefaultEncoding("UTF-8");
+        processor = new ReminderNotificationProcessor(reminders, vehicles, notifications,
+                Clock.fixed(NOW, ZoneOffset.UTC), users, new MessageLocalizer(source));
+        User user = new User("Reminder", "Owner", "owner@example.com", "hash");
+        user.changePreferredLanguage(language);
+        when(users.findById(vehicle.getUserId())).thenReturn(Optional.of(user));
+        Reminder reminder = new Reminder(vehicle.getId(), category, title, "authored description",
+                ReminderTriggerType.DATE, NOW, null);
+        arrange(reminder);
+        when(notifications.sendToUser(any(), any())).thenReturn(sent());
+
+        assertThat(processor.process(reminder.getId())).isTrue();
+
+        ArgumentCaptor<NotificationCommand> command = forClass(NotificationCommand.class);
+        verify(notifications).sendToUser(any(), command.capture());
+        assertThat(command.getValue().title()).isEqualTo(title);
+        assertThat(command.getValue().body()).isEqualTo(expectedBody);
     }
 
     private void assertDelivered(Reminder reminder, UserNotificationResult result) {
@@ -142,6 +200,11 @@ class ReminderNotificationProcessorTest {
     private Reminder mileage(long target) {
         return new Reminder(vehicle.getId(), ReminderCategory.MAINTENANCE, "Service", null,
                 ReminderTriggerType.MILEAGE, null, target);
+    }
+
+    private Reminder expiration(ReminderCategory category, Instant target) {
+        return new Reminder(vehicle.getId(), category, "Expiration", null,
+                ReminderTriggerType.DATE, target, null);
     }
 
     private UserNotificationResult sent() {

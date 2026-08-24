@@ -138,6 +138,12 @@ class ReminderIntegrationTest extends AbstractIntegrationTest {
                 + "\"triggerType\":\"DATE\",\"targetMileage\":1}")
                 .andExpect(status().isUnprocessableEntity())
                 .andExpect(jsonPath("$.error.code").value("INVALID_REMINDER"));
+        create(session, vehicle, mileageBody().replace("OIL_CHANGE", "LICENSE_EXPIRATION"))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.error.code").value("INVALID_REMINDER"));
+        create(session, vehicle, mileageBody().replace("OIL_CHANGE", "INSURANCE_EXPIRATION"))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.error.code").value("INVALID_REMINDER"));
     }
 
     @Test
