@@ -39,7 +39,7 @@ class DevelopmentSeedDataInitializerTest {
     void isRestrictedToTheDevProfile() {
         Profile profile = DevelopmentSeedDataInitializer.class.getAnnotation(Profile.class);
         assertThat(profile).isNotNull();
-        assertThat(profile.value()).containsExactly("dev");
+        assertThat(profile.value()).containsExactly("dev & !test");
     }
 
     @Test

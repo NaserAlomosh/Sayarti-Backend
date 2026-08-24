@@ -36,7 +36,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 @Component
-@Profile("dev")
+@Profile("dev & !test")
 public class DevelopmentSeedDataInitializer implements ApplicationRunner {
     private static final Logger log = LoggerFactory.getLogger(DevelopmentSeedDataInitializer.class);
 
