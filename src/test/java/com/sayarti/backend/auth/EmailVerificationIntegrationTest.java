@@ -165,7 +165,24 @@ class EmailVerificationIntegrationTest extends AbstractIntegrationTest {
                 .andExpect(status().isOk());
         String replacementCode = testEmailService.latestOtpFor("replacement@example.com");
         assertThat(replacementCode).isNotEqualTo(originalCode);
-        assertThat(otps.findById(original.getId()).orElseThrow().getInvalidatedAt()).isNotNull();
+        assertThat(testEmailService.sentVerificationEmails())
+                .filteredOn(email -> email.recipient().equalsIgnoreCase("replacement@example.com"))
+                .hasSize(2);
+
+        // invalidateActive is a bulk update, so discard the active entity loaded during resend
+        // before asserting the state that was actually persisted.
+        entityManager.flush();
+        entityManager.clear();
+        var persistedOriginal = otps.findById(original.getId()).orElseThrow();
+        assertThat(persistedOriginal.getInvalidatedAt()).isNotNull();
+        var replacement = otps
+                .findFirstByUserIdAndVerifiedAtIsNullAndInvalidatedAtIsNullOrderByCreatedAtDesc(
+                        replacementUser.getId())
+                .orElseThrow();
+        assertThat(replacement.getId()).isNotEqualTo(original.getId());
+        assertThat(otps.findAll().stream()
+                .filter(otp -> otp.getUser().getId().equals(replacementUser.getId())))
+                .hasSize(2);
 
         mvc.perform(post("/api/v1/auth/verify-email").contentType(MediaType.APPLICATION_JSON)
                         .content("{\"email\":\"replacement@example.com\",\"otp\":\"%s\"}"
