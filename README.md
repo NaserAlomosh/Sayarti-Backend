@@ -51,7 +51,9 @@ The Java 17 Maven/Spring Boot foundation currently includes:
 - General vehicle statistics with vehicle ownership enforcement.
 - Fuel statistics with vehicle ownership enforcement.
 - Maintenance statistics with vehicle ownership enforcement.
+- Expense statistics with vehicle ownership enforcement.
 - True Vehicle Cost statistics with vehicle ownership enforcement.
+- Vehicle dashboard summaries with vehicle ownership enforcement.
 - Microsoft SQL Server persistence.
 - Flyway schema migrations.
 - Hibernate schema validation.
@@ -68,7 +70,7 @@ Local verification has completed successfully with:
 ./mvnw clean verify
 
 BUILD SUCCESS
-Tests run: 133
+Tests run: 143
 Failures: 0
 Errors: 0
 Skipped: 0
@@ -89,10 +91,10 @@ Docker / Testcontainers
 Country/Currency Foundation, Vehicle Management, Vehicle-specific ownership protection,
 Fuel Tracking CRUD with ownership protection, Maintenance CRUD with ownership protection,
 Expense CRUD with ownership protection, Reminder CRUD and completion with ownership
-protection, Device Management, General Vehicle Statistics with ownership protection, Fuel
-Statistics with ownership protection, Maintenance Statistics with ownership protection, and True
-Vehicle Cost with ownership protection are implemented and locally verified. Fuel Calculations,
-Expense Statistics, Dashboard, and Energy Tracking are not implemented yet.
+protection, Device Management, General Vehicle Statistics, Fuel Statistics, Maintenance
+Statistics, Expense Statistics, True Vehicle Cost, and the Vehicle Dashboard are implemented
+with ownership protection and locally verified. Fuel Calculations and Energy Tracking are not
+implemented yet.
 
 LOCAL email verification is implemented and locally verified. The provider-neutral SMTP
 adapter is implemented and automated-test covered. Real SMTP delivery remains
@@ -698,7 +700,7 @@ these vehicle fields.
 - [x] Protect Expense APIs
 - [x] Protect Reminder APIs
 - [x] Protect Statistics APIs
-- [ ] Protect Dashboard APIs
+- [x] Protect Dashboard APIs
 
 ---
 
@@ -830,7 +832,7 @@ empty currency and category arrays, and `null` latest date and mileage.
 
 # 30. Expense Statistics
 
-- [ ] Create Expense Statistics Endpoint
+- [x] Create Expense Statistics Endpoint
 
 ---
 
@@ -845,7 +847,7 @@ empty currency and category arrays, and `null` latest date and mileage.
 
 # 32. Dashboard
 
-- [ ] Create Vehicle Dashboard Endpoint
+- [x] Create Vehicle Dashboard Endpoint
 
 ---
 
@@ -1026,8 +1028,12 @@ api.version=1.44
 - [x] General Statistics
 - [x] Fuel Statistics
 - [x] Maintenance Statistics
-- [ ] Expense Statistics
+- [x] Expense Statistics
 - [x] True Vehicle Cost
+
+## Dashboard Tests
+
+- [x] Vehicle Dashboard
 
 ## Security Tests
 
@@ -1054,7 +1060,7 @@ Current verified baseline:
 
 ```text
 BUILD SUCCESS
-Tests run: 133
+Tests run: 143
 Failures: 0
 Errors: 0
 Skipped: 0
@@ -1113,7 +1119,7 @@ before its own checklist items are marked complete.
 - [x] Statistics
 - [x] Fuel Statistics
 - [x] True Vehicle Cost
-- [ ] Dashboard
+- [x] Dashboard
 - [ ] Recent Activity
 - [x] Swagger
 - [ ] Full V1 Testing
