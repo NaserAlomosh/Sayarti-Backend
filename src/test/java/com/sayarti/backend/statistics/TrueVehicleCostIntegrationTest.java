@@ -136,7 +136,7 @@ class TrueVehicleCostIntegrationTest extends AbstractIntegrationTest {
 
     private String createFuel(Session s, UUID v, int km, String quantity, String price,
             String currency, String date) throws Exception {
-        return post(s, "/api/v1/vehicles/" + v + "/fuel-records", """
+        return authenticatedPost(s, "/api/v1/vehicles/" + v + "/fuel-records", """
                 {"odometerKm":%d,"quantityLiters":%s,"pricePerLiter":%s,
                  "currencyCode":"%s","filledAt":"%sT10:00:00Z","fullTank":true}
                 """.formatted(km, quantity, price, currency, date));
@@ -144,7 +144,7 @@ class TrueVehicleCostIntegrationTest extends AbstractIntegrationTest {
 
     private String createMaintenance(Session s, UUID v, String cost, String currency, String date)
             throws Exception {
-        return post(s, "/api/v1/vehicles/" + v + "/maintenance-records", """
+        return authenticatedPost(s, "/api/v1/vehicles/" + v + "/maintenance-records", """
                 {"category":"INSPECTION","title":"Service","serviceDate":"%sT10:00:00Z",
                  "mileageKm":1000,"cost":%s,"currencyCode":"%s"}
                 """.formatted(date, cost, currency));
@@ -152,20 +152,20 @@ class TrueVehicleCostIntegrationTest extends AbstractIntegrationTest {
 
     private String createExpense(Session s, UUID v, String amount, String currency, String date)
             throws Exception {
-        return post(s, "/api/v1/vehicles/" + v + "/expenses", """
+        return authenticatedPost(s, "/api/v1/vehicles/" + v + "/expenses", """
                 {"category":"TOLL","title":"Expense","expenseDate":"%sT10:00:00Z",
                  "amount":%s,"currencyCode":"%s"}
                 """.formatted(date, amount, currency));
     }
 
-    private String post(Session session, String path, String body) throws Exception {
+    private String authenticatedPost(Session session, String path, String body) throws Exception {
         return mvc.perform(post(path).header("Authorization", bearer(session))
                         .contentType(MediaType.APPLICATION_JSON).content(body))
                 .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString();
     }
 
     private UUID vehicle(Session session) throws Exception {
-        return id(post(session, "/api/v1/vehicles", """
+        return id(authenticatedPost(session, "/api/v1/vehicles", """
                 {"brand":"Test","model":"Car","year":2025,"powertrainType":"GASOLINE",
                  "fuelType":"GASOLINE_95","fuelTankCapacityLiters":50,"currentMileage":1000}
                 """));
