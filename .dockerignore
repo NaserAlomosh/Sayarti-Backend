@@ -1,0 +1,33 @@
+.git
+.gitignore
+.gitattributes
+.env
+.env.*
+!.env.example
+target
+
+# IDE and editor metadata
+.idea
+.vscode
+.settings
+.classpath
+.factorypath
+.project
+*.iml
+*.ipr
+*.iws
+
+# Local secrets and certificates
+*.jks
+*.p12
+*service-account*.json
+
+# Operating-system files
+.DS_Store
+Thumbs.db
+
+# Documentation and local orchestration are not needed to compile the application
+README.md
+SECRETS_SETUP.md
+compose*.yml
+compose*.yaml
