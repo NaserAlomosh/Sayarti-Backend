@@ -8,6 +8,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.sayarti.backend.AbstractIntegrationTest;
 import com.sayarti.backend.auth.repository.EmailVerificationOtpRepository;
 import com.sayarti.backend.auth.repository.RefreshTokenRepository;
+import com.sayarti.backend.auth.service.RefreshTokenService;
 import com.sayarti.backend.user.repository.UserRepository;
 import jakarta.persistence.EntityManager;
 import java.time.Instant;
@@ -31,6 +32,7 @@ class EmailVerificationIntegrationTest extends AbstractIntegrationTest {
     @Autowired MockMvc mvc;
     @Autowired UserRepository users;
     @Autowired RefreshTokenRepository refreshTokens;
+    @Autowired RefreshTokenService refreshTokenService;
     @Autowired EmailVerificationOtpRepository otps;
     @Autowired JdbcTemplate jdbc;
     @Autowired EntityManager entityManager;
@@ -62,6 +64,25 @@ class EmailVerificationIntegrationTest extends AbstractIntegrationTest {
                                 .formatted(plaintext)))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.error.code").value("AUTH_EMAIL_ALREADY_VERIFIED"));
+    }
+
+    @Test
+    void unverifiedLocalAccountCannotUsePreviouslyIssuedRefreshToken() throws Exception {
+        register("refresh-guard@example.com");
+        var user = users.findByEmailIgnoreCaseAndDeletedAtIsNull("refresh-guard@example.com")
+                .orElseThrow();
+        user.verifyEmail();
+        users.saveAndFlush(user);
+        String refreshToken = refreshTokenService.issue(user).raw();
+
+        assertThat(jdbc.update("UPDATE users SET email_verified = 0 WHERE id = ?", user.getId()))
+                .isOne();
+        entityManager.clear();
+
+        mvc.perform(post("/api/v1/auth/refresh").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"refreshToken\":\"%s\"}".formatted(refreshToken)))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.error.code").value("AUTH_EMAIL_NOT_VERIFIED"));
     }
 
     @Test

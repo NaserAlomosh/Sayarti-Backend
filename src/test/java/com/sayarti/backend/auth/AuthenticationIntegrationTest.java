@@ -145,17 +145,34 @@ class AuthenticationIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
-    void logsInAndRejectsBadCredentials() throws Exception {
+    void localLoginDistinguishesInvalidVerifiedAndVerificationRequiredOutcomes() throws Exception {
         register("login@example.com");
 
+        long otpCount = jdbc.queryForObject("SELECT COUNT(*) FROM email_verification_otps",
+                Long.class);
         mvc.perform(post("/api/v1/auth/login").contentType(MediaType.APPLICATION_JSON).content("""
                         {
                           "email": "login@example.com",
                           "password": "StrongPass1"
                         }
                         """))
-                .andExpect(status().isForbidden())
-                .andExpect(jsonPath("$.error.code").value("AUTH_EMAIL_NOT_VERIFIED"));
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.requiredAction").value("VERIFY_EMAIL"))
+                .andExpect(jsonPath("$.data.user.emailVerified").value(false))
+                .andExpect(jsonPath("$.data.user.id").isNotEmpty())
+                .andExpect(jsonPath("$.data.user.firstName").value("Sara"))
+                .andExpect(jsonPath("$.data.user.lastName").value("Ali"))
+                .andExpect(jsonPath("$.data.user.email").value("login@example.com"))
+                .andExpect(jsonPath("$.data.user.authProvider").value("LOCAL"))
+                .andExpect(jsonPath("$.data.accessToken").doesNotExist())
+                .andExpect(jsonPath("$.data.refreshToken").doesNotExist());
+        assertThat(tokens.count()).isZero();
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM email_verification_otps", Long.class))
+                .isEqualTo(otpCount);
+        assertThat(testEmailService.sentVerificationEmails())
+                .filteredOn(email -> email.recipient().equalsIgnoreCase("login@example.com"))
+                .hasSize(1);
 
         User user = users.findByEmailIgnoreCaseAndDeletedAtIsNull("login@example.com").orElseThrow();
         user.verifyEmail();
@@ -169,7 +186,8 @@ class AuthenticationIntegrationTest extends AbstractIntegrationTest {
                         """))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.accessToken").isNotEmpty())
-                .andExpect(jsonPath("$.data.refreshToken").isNotEmpty());
+                .andExpect(jsonPath("$.data.refreshToken").isNotEmpty())
+                .andExpect(jsonPath("$.data.requiredAction").doesNotExist());
 
         mvc.perform(post("/api/v1/auth/login").contentType(MediaType.APPLICATION_JSON).content("""
                         {

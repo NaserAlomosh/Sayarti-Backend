@@ -77,17 +77,21 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    @Operation(summary = "Log in with email and password")
+    @Operation(
+            summary = "Log in with email and password",
+            description = "Valid credentials return HTTP 200 in two forms: verified accounts "
+                    + "receive an authenticated session and token pair; unverified LOCAL accounts "
+                    + "receive requiredAction=VERIFY_EMAIL, their user details, and no tokens. "
+                    + "Login never resends a verification OTP.")
     @ApiResponses({
         @io.swagger.v3.oas.annotations.responses.ApiResponse(
                 responseCode = "200",
-                description = "Session created"),
+                description = "Verified account: authenticated session with access and refresh "
+                        + "tokens; or unverified LOCAL account: requiredAction=VERIFY_EMAIL with "
+                        + "no tokens"),
         @io.swagger.v3.oas.annotations.responses.ApiResponse(
                 responseCode = "401",
                 description = "Invalid credentials"),
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(
-                responseCode = "403",
-                description = "AUTH_EMAIL_NOT_VERIFIED: local email verification is required")
     })
     public ApiResponse<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
         return ApiResponse.success(service.login(request));

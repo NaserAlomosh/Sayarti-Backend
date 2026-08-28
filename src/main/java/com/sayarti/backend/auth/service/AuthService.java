@@ -74,7 +74,9 @@ public class AuthService {
                 || !encoder.matches(r.password(), user.getPasswordHash())) {
             throw invalidCredentials();
         }
-        requireVerified(user);
+        if (!user.isEmailVerified()) {
+            return verificationRequired(user);
+        }
         return tokens(user);
     }
 
@@ -158,11 +160,8 @@ public class AuthService {
         return user;
     }
 
-    private void requireVerified(User user) {
-        if (user.getAuthProvider() == AuthProvider.LOCAL && !user.isEmailVerified()) {
-            throw new ApiException(ErrorCode.AUTH_EMAIL_NOT_VERIFIED, HttpStatus.FORBIDDEN,
-                    "Email verification is required");
-        }
+    private AuthResponse verificationRequired(User user) {
+        return new AuthResponse(null, null, null, null, UserResponse.from(user), "VERIFY_EMAIL");
     }
 
     private AuthResponse response(User u, String refresh) {
