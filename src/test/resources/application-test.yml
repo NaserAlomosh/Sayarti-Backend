@@ -1,0 +1,24 @@
+spring:
+  config:
+    activate:
+      on-profile: test
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: true
+sayarti:
+  cors:
+    allowed-origins: http://localhost
+  jwt:
+    access-secret: test-access-secret-that-is-at-least-thirty-two-bytes-long
+    refresh-secret: unused-test-refresh-secret-that-is-at-least-thirty-two-bytes
+    access-expiration: 900000
+    refresh-expiration: 2592000000
+  google:
+    client-id: test-google-client-id.apps.googleusercontent.com
+  firebase:
+    # Integration tests use the unavailable-provider fallback even when a developer's
+    # FIREBASE_SERVICE_ACCOUNT_PATH is present in the Maven process environment.
+    enabled: false

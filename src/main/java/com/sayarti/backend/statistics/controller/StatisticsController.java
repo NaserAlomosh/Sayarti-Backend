@@ -1,0 +1,142 @@
+package com.sayarti.backend.statistics.controller;
+
+import com.sayarti.backend.common.response.ApiResponse;
+import com.sayarti.backend.security.jwt.AuthenticatedUser;
+import com.sayarti.backend.statistics.dto.ExpenseStatisticsResponse;
+import com.sayarti.backend.statistics.dto.FuelStatisticsResponse;
+import com.sayarti.backend.statistics.dto.GeneralStatisticsResponse;
+import com.sayarti.backend.statistics.dto.MaintenanceStatisticsResponse;
+import com.sayarti.backend.statistics.dto.TrueVehicleCostResponse;
+import com.sayarti.backend.statistics.service.StatisticsService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.UUID;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+@RequestMapping("/api/v1/vehicles/{vehicleId}/statistics")
+@Tag(name = "Statistics", description = "Authenticated vehicle-level V1 statistics")
+@SecurityRequirement(name = "bearerAuth")
+public class StatisticsController {
+    private final StatisticsService service;
+
+    public StatisticsController(StatisticsService service) { this.service = service; }
+
+    @GetMapping
+    @Operation(summary = "Get general vehicle statistics", description = "Aggregates only "
+            + "non-deleted V1 records. Monetary totals retain their original currency and are "
+            + "grouped by currency code; no conversion occurs. Empty domains return zero counts, "
+            + "zero fuel quantity, and empty total arrays. Unknown, deleted, and other users' "
+            + "vehicles all return VEHICLE_NOT_FOUND, hiding resource existence.")
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200",
+            description = "General statistics response",
+            content = @Content(schema = @Schema(implementation = GeneralStatisticsResponse.class)))
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401",
+            description = "Bearer authentication is missing or invalid")
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404",
+            description = "VEHICLE_NOT_FOUND for missing, deleted, or inaccessible vehicles")
+    public ApiResponse<GeneralStatisticsResponse> get(
+            @Parameter(description = "Owned active vehicle UUID", required = true)
+            @PathVariable UUID vehicleId,
+            @AuthenticationPrincipal AuthenticatedUser user) {
+        return ApiResponse.success(service.general(user, vehicleId));
+    }
+
+    @GetMapping("/fuel")
+    @Operation(summary = "Get vehicle fuel statistics", description = "Aggregates only active, "
+            + "non-soft-deleted fuel records for the authenticated user's active vehicle. Totals "
+            + "and cost-per-kilometer values remain separated by original currency; no currency "
+            + "conversion occurs. Empty histories return zero totals and empty currency arrays. "
+            + "A single record, or a history without a positive consecutive odometer interval, "
+            + "returns null efficiency and consumption values and null per-currency cost rates. "
+            + "Missing, deleted, and other users' vehicles all return VEHICLE_NOT_FOUND to hide "
+            + "resource existence.")
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200",
+            description = "Fuel statistics response",
+            content = @Content(schema = @Schema(implementation = FuelStatisticsResponse.class)))
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401",
+            description = "Bearer authentication is missing or invalid")
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404",
+            description = "VEHICLE_NOT_FOUND for missing, deleted, or inaccessible vehicles")
+    public ApiResponse<FuelStatisticsResponse> getFuel(
+            @Parameter(description = "Owned active vehicle UUID", required = true)
+            @PathVariable UUID vehicleId,
+            @AuthenticationPrincipal AuthenticatedUser user) {
+        return ApiResponse.success(service.fuel(user, vehicleId));
+    }
+
+    @GetMapping("/maintenance")
+    @Operation(summary = "Get vehicle maintenance statistics", description = "Aggregates only "
+            + "active, non-soft-deleted maintenance records for the authenticated user's active "
+            + "vehicle. Total and average costs remain separated by original currency; no "
+            + "conversion occurs. The category breakdown follows maintenance-category declaration "
+            + "order. Empty histories return zero records, empty currency/category arrays, and null "
+            + "latest date and mileage. Missing, deleted, and other users' vehicles all return "
+            + "VEHICLE_NOT_FOUND to hide resource existence.")
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200",
+            description = "Maintenance statistics response, including empty and multi-currency histories",
+            content = @Content(schema = @Schema(implementation = MaintenanceStatisticsResponse.class)))
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401",
+            description = "Bearer authentication is missing or invalid")
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404",
+            description = "VEHICLE_NOT_FOUND for missing, deleted, or inaccessible vehicles")
+    public ApiResponse<MaintenanceStatisticsResponse> getMaintenance(
+            @Parameter(description = "Owned active vehicle UUID", required = true)
+            @PathVariable UUID vehicleId,
+            @AuthenticationPrincipal AuthenticatedUser user) {
+        return ApiResponse.success(service.maintenance(user, vehicleId));
+    }
+
+    @GetMapping("/expenses")
+    @Operation(summary = "Get vehicle expense statistics", description = "Aggregates only active, "
+            + "non-soft-deleted expense records for the authenticated user's active vehicle. Total "
+            + "and average amounts remain separated by original currency; no conversion occurs. "
+            + "Currency codes are ordered lexicographically and the category breakdown follows "
+            + "expense-category declaration order. Empty histories return zero records, empty "
+            + "currency/category arrays, and a null latest date. Missing, deleted, and other users' "
+            + "vehicles all return VEHICLE_NOT_FOUND to hide resource existence.")
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200",
+            description = "Expense statistics response, including empty and multi-currency histories",
+            content = @Content(schema = @Schema(implementation = ExpenseStatisticsResponse.class)))
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401",
+            description = "Bearer authentication is missing or invalid")
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404",
+            description = "VEHICLE_NOT_FOUND for missing, deleted, or inaccessible vehicles")
+    public ApiResponse<ExpenseStatisticsResponse> getExpenses(
+            @Parameter(description = "Owned active vehicle UUID", required = true)
+            @PathVariable UUID vehicleId,
+            @AuthenticationPrincipal AuthenticatedUser user) {
+        return ApiResponse.success(service.expense(user, vehicleId));
+    }
+
+    @GetMapping("/total-cost")
+    @Operation(summary = "Get true vehicle cost", description = "Sums active fuel, maintenance, "
+            + "and expense costs by original currency without conversion; reminders are excluded. "
+            + "Average monthly cost uses the inclusive count of UTC calendar months from the "
+            + "earliest through latest active cost record (minimum one). Cost per kilometer divides "
+            + "each currency total by FuelCalculator's positive consecutive fuel-odometer eligible "
+            + "distance, not current mileage, and is null when that distance is unavailable. Empty "
+            + "histories retain current mileage and return empty currency arrays. Missing, deleted, "
+            + "and other users' vehicles return VEHICLE_NOT_FOUND to hide resource existence.")
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200",
+            description = "True vehicle cost response",
+            content = @Content(schema = @Schema(implementation = TrueVehicleCostResponse.class)))
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401",
+            description = "Bearer authentication is missing or invalid")
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404",
+            description = "VEHICLE_NOT_FOUND for missing, deleted, or inaccessible vehicles")
+    public ApiResponse<TrueVehicleCostResponse> getTotalCost(
+            @Parameter(description = "Owned active vehicle UUID", required = true)
+            @PathVariable UUID vehicleId,
+            @AuthenticationPrincipal AuthenticatedUser user) {
+        return ApiResponse.success(service.totalCost(user, vehicleId));
+    }
+}

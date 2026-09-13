@@ -1,0 +1,91 @@
+services:
+  database:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_PID: Developer
+      MSSQL_SA_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in your environment or .env file}
+    ports:
+      - "${DB_PORT:-1433}:1433"
+    volumes:
+      - sqlserver-data:/var/opt/mssql
+    networks:
+      - sayarti-network
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -C -Q 'SELECT 1' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - ${FIREBASE_SERVICE_ACCOUNT_PATH}:/run/secrets/firebase-service-account.json:ro
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      DB_HOST: database
+      DB_PORT: 1433
+      DB_NAME: ${DB_NAME:-sayarti}
+      DB_USERNAME: ${DB_USERNAME:-sa}
+      DB_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in your environment or .env file}
+      DB_TRUST_SERVER_CERTIFICATE: ${DB_TRUST_SERVER_CERTIFICATE:-true}
+      DEV_SEED_PASSWORD: ${DEV_SEED_PASSWORD:-}
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:?Set JWT_ACCESS_SECRET in your environment or .env file}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:?Set JWT_REFRESH_SECRET in your environment or .env file}
+      JWT_ACCESS_EXPIRATION: ${JWT_ACCESS_EXPIRATION:-900000}
+      JWT_REFRESH_EXPIRATION: ${JWT_REFRESH_EXPIRATION:-2592000000}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:?Set GOOGLE_CLIENT_ID in your environment or .env file}
+      FIREBASE_SERVICE_ACCOUNT_PATH: ${FIREBASE_SERVICE_ACCOUNT_PATH:-}
+      EMAIL_OTP_EXPIRATION_SECONDS: ${EMAIL_OTP_EXPIRATION_SECONDS:-300}
+      EMAIL_OTP_RESEND_COOLDOWN_SECONDS: ${EMAIL_OTP_RESEND_COOLDOWN_SECONDS:-60}
+      EMAIL_OTP_MAX_ATTEMPTS: ${EMAIL_OTP_MAX_ATTEMPTS:-5}
+      SMTP_HOST: ${SMTP_HOST:-localhost}
+      SMTP_PORT: ${SMTP_PORT:-25}
+      SMTP_USERNAME: ${SMTP_USERNAME:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_FROM: ${SMTP_FROM:-no-reply@example.com}
+      SMTP_TLS: ${SMTP_TLS:-false}
+      SMTP_STARTTLS_REQUIRED: ${SMTP_STARTTLS_REQUIRED:-false}
+      SMTP_SSL: ${SMTP_SSL:-false}
+      SMTP_CONNECTION_TIMEOUT: ${SMTP_CONNECTION_TIMEOUT:-10000}
+      SMTP_TIMEOUT: ${SMTP_TIMEOUT:-60000}
+      SMTP_WRITE_TIMEOUT: ${SMTP_WRITE_TIMEOUT:-60000}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:3000,http://localhost:8080}
+      REMINDER_SCHEDULER_INTERVAL_MS: ${REMINDER_SCHEDULER_INTERVAL_MS:-60000}
+      REMINDER_SCHEDULER_BATCH_SIZE: ${REMINDER_SCHEDULER_BATCH_SIZE:-100}
+    ports:
+      - "8080:8080"
+    depends_on:
+      database:
+        condition: service_healthy
+      database-init:
+        condition: service_completed_successfully
+    networks:
+      - sayarti-network
+
+  database-init:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      DB_NAME: ${DB_NAME:-sayarti}
+      DB_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in your environment or .env file}
+    entrypoint: ["/bin/bash", "-c"]
+    command:
+      - >-
+        [[ "$$DB_NAME" =~ ^[A-Za-z0-9_]+$$ ]] || { echo 'DB_NAME may contain only letters, numbers, and underscores' >&2; exit 1; };
+        /opt/mssql-tools18/bin/sqlcmd -b -S database -U sa -P "$$DB_PASSWORD" -C
+        -Q "IF DB_ID(N'$$DB_NAME') IS NULL EXEC(N'CREATE DATABASE [$$DB_NAME]')"
+    depends_on:
+      database:
+        condition: service_healthy
+    networks:
+      - sayarti-network
+
+volumes:
+  sqlserver-data:
+
+networks:
+  sayarti-network:
+    driver: bridge

@@ -1,0 +1,16 @@
+spring:
+  config:
+    activate:
+      on-profile: dev
+
+logging:
+  level:
+    com.sayarti.backend: DEBUG
+
+springdoc:
+  swagger-ui:
+    enabled: true
+
+sayarti:
+  dev-seed:
+    password: ${DEV_SEED_PASSWORD:}

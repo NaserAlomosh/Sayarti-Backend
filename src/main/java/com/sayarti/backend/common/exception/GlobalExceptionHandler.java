@@ -1,0 +1,128 @@
+package com.sayarti.backend.common.exception;
+
+import com.sayarti.backend.common.response.ErrorResponse;
+import jakarta.validation.ConstraintViolationException;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataAccessException;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
+
+@RestControllerAdvice
+public class GlobalExceptionHandler {
+    private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+    private final com.sayarti.backend.i18n.MessageLocalizer localizer;
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public GlobalExceptionHandler(com.sayarti.backend.i18n.MessageLocalizer localizer) {
+        this.localizer = localizer;
+    }
+
+    public GlobalExceptionHandler() {
+        org.springframework.context.support.ResourceBundleMessageSource source =
+                new org.springframework.context.support.ResourceBundleMessageSource();
+        source.setBasename("messages");
+        source.setDefaultEncoding("UTF-8");
+        this.localizer = new com.sayarti.backend.i18n.MessageLocalizer(source);
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    ResponseEntity<ErrorResponse> handleMethodArgumentNotValid(
+            MethodArgumentNotValidException exception) {
+        Map<String, String> details = new LinkedHashMap<>();
+        for (FieldError error : exception.getBindingResult().getFieldErrors()) {
+            details.putIfAbsent(error.getField(), localizeValidation(error.getDefaultMessage()));
+        }
+        return response(HttpStatus.BAD_REQUEST, ErrorCode.VALIDATION_ERROR,
+                "Request validation failed", details);
+    }
+
+    @ExceptionHandler(ConstraintViolationException.class)
+    ResponseEntity<ErrorResponse> handleConstraintViolation(
+            ConstraintViolationException exception) {
+        Map<String, String> details = new LinkedHashMap<>();
+        exception.getConstraintViolations().forEach(violation
+                -> details.put(violation.getPropertyPath().toString(), localizeValidation(violation.getMessage())));
+        return response(HttpStatus.BAD_REQUEST, ErrorCode.VALIDATION_ERROR,
+                "Request validation failed", details);
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    ResponseEntity<ErrorResponse> handleHttpMessageNotReadable(
+            HttpMessageNotReadableException exception) {
+        return response(HttpStatus.BAD_REQUEST, ErrorCode.VALIDATION_ERROR,
+                "Request body is malformed or contains an invalid value", null);
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    ResponseEntity<ErrorResponse> handleTypeMismatch(MethodArgumentTypeMismatchException exception) {
+        return response(HttpStatus.BAD_REQUEST, ErrorCode.VALIDATION_ERROR,
+                "Query parameter has an invalid value",
+                Map.of(exception.getName(), "Must use the documented format"));
+    }
+
+    @ExceptionHandler(ApiException.class)
+    ResponseEntity<ErrorResponse> handleApiException(ApiException exception) {
+        return response(
+                exception.getStatus(), exception.getErrorCode(),
+                localizer.error(exception.getErrorCode(), exception.getMessage()), null);
+    }
+
+    @ExceptionHandler(AuthenticationException.class)
+    ResponseEntity<ErrorResponse> handleAuthentication(AuthenticationException exception) {
+        return response(HttpStatus.UNAUTHORIZED, ErrorCode.UNAUTHORIZED,
+                "Authentication is required", null);
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    ResponseEntity<ErrorResponse> handleAccessDenied(AccessDeniedException exception) {
+        return response(HttpStatus.FORBIDDEN, ErrorCode.FORBIDDEN, "Access is denied", null);
+    }
+
+    @ExceptionHandler(NoResourceFoundException.class)
+    ResponseEntity<ErrorResponse> handleNoResourceFound(NoResourceFoundException exception) {
+        return response(HttpStatus.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
+                "Resource not found", null);
+    }
+
+    @ExceptionHandler(DataAccessException.class)
+    ResponseEntity<ErrorResponse> handleDatabase(DataAccessException exception) {
+        log.error("Database operation failed", exception);
+        return response(HttpStatus.INTERNAL_SERVER_ERROR, ErrorCode.DATABASE_ERROR,
+                "A database error occurred", null);
+    }
+
+    @ExceptionHandler(Exception.class)
+    ResponseEntity<ErrorResponse> handleUnexpected(Exception exception) {
+        log.error("Unexpected request failure", exception);
+        return response(HttpStatus.INTERNAL_SERVER_ERROR, ErrorCode.INTERNAL_SERVER_ERROR,
+                "An unexpected error occurred", null);
+    }
+
+    private ResponseEntity<ErrorResponse> response(
+            HttpStatus status, ErrorCode code, String message, Map<String, String> details) {
+        return ResponseEntity.status(status).body(ErrorResponse.of(code.name(), localizer.error(code, message), details));
+    }
+
+    private String localizeValidation(String message) {
+        if (message == null) return null;
+        String key = switch (message) {
+            case "must not be blank" -> "validation.not.blank";
+            case "at least one editable field must be provided" -> "validation.editable.required";
+            case "must contain upper-case, lower-case, and numeric characters" -> "validation.password.complexity";
+            default -> null;
+        };
+        return key == null ? message : localizer.text(key, message);
+    }
+}
